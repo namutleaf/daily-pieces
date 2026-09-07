@@ -21,7 +21,7 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={styles.actions}>
         <Pressable
           style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
-          onPress={() => navigation.navigate('CardSelect')}
+          onPress={() => navigation.navigate('ToneSelect')}
         >
           <Text style={styles.primaryBtnText}>오늘의 조각 모으기</Text>
         </Pressable>

@@ -22,6 +22,8 @@ export type Category = {
 
 export type Selections = Record<CategoryKey, WordItem>;
 
+export type ToneKey = 'plain' | 'polite' | 'sns';
+
 export type PaletteKey =
   | '설렘'
   | '평온'
@@ -37,6 +39,7 @@ export type DiaryEntry = {
   createdAt: number;
   dateLabel: string;
   selections: Selections;
+  tone: ToneKey;
   diaryText: string;
   hashtags: string[];
   paletteKey: PaletteKey;

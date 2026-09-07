@@ -25,3 +25,9 @@ export async function removeEntry(id: string): Promise<void> {
   const next = entries.filter((e) => e.id !== id);
   await AsyncStorage.setItem(KEY, JSON.stringify(next));
 }
+
+export async function updateEntryText(id: string, diaryText: string): Promise<void> {
+  const entries = await loadEntries();
+  const next = entries.map((e) => (e.id === id ? { ...e, diaryText } : e));
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+}

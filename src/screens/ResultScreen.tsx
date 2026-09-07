@@ -8,14 +8,29 @@ import * as Sharing from 'expo-sharing';
 import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import DiaryCard from '../components/DiaryCard';
-import { removeEntry } from '../utils/storage';
+import { removeEntry, updateEntryText } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 
 export default function ResultScreen({ route, navigation }: Props) {
-  const { entry, fromHistory } = route.params;
+  const { fromHistory } = route.params;
+  const [entry, setEntry] = useState(route.params.entry);
+  const [editing, setEditing] = useState(false);
+  const [draftText, setDraftText] = useState(entry.diaryText);
   const cardRef = useRef<View>(null);
   const [working, setWorking] = useState(false);
+
+  const handleToggleEdit = async () => {
+    if (editing) {
+      const trimmed = draftText.trim();
+      const nextEntry = { ...entry, diaryText: trimmed };
+      setEntry(nextEntry);
+      await updateEntryText(entry.id, trimmed);
+    } else {
+      setDraftText(entry.diaryText);
+    }
+    setEditing((v) => !v);
+  };
 
   const captureImage = async () => {
     if (!cardRef.current) return null;
@@ -76,13 +91,26 @@ export default function ResultScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <DiaryCard ref={cardRef} entry={entry} />
+        <DiaryCard
+          ref={cardRef}
+          entry={entry}
+          editing={editing}
+          editValue={draftText}
+          onChangeEditValue={setDraftText}
+        />
 
         <View style={styles.actions}>
           <Pressable
+            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
+            onPress={handleToggleEdit}
+          >
+            <Text style={styles.secondaryBtnText}>{editing ? '수정 완료' : '직접 수정하기'}</Text>
+          </Pressable>
+
+          <Pressable
             style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
             onPress={handleShare}
-            disabled={working}
+            disabled={working || editing}
           >
             <Text style={styles.primaryBtnText}>공유하기</Text>
           </Pressable>
@@ -90,14 +118,14 @@ export default function ResultScreen({ route, navigation }: Props) {
           <Pressable
             style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
             onPress={handleSaveImage}
-            disabled={working}
+            disabled={working || editing}
           >
             <Text style={styles.secondaryBtnText}>이미지 저장</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [styles.textBtn, pressed && styles.pressed]}
-            onPress={() => navigation.replace('CardSelect')}
+            onPress={() => navigation.replace('ToneSelect')}
           >
             <Text style={styles.textBtnText}>다시 만들기</Text>
           </Pressable>

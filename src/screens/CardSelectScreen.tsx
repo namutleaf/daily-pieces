@@ -13,7 +13,8 @@ import { saveEntry } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
 
-export default function CardSelectScreen({ navigation }: Props) {
+export default function CardSelectScreen({ navigation, route }: Props) {
+  const { tone } = route.params;
   const [roundIndex, setRoundIndex] = useState(0);
   const [selections, setSelections] = useState<Partial<Selections>>({});
   const [busy, setBusy] = useState(false);
@@ -34,7 +35,7 @@ export default function CardSelectScreen({ navigation }: Props) {
 
       setTimeout(async () => {
         if (isLastRound) {
-          const entry = buildDiaryEntry(nextSelections);
+          const entry = buildDiaryEntry(nextSelections, tone);
           await saveEntry(entry);
           navigation.replace('Result', { entry });
         } else {
@@ -43,7 +44,7 @@ export default function CardSelectScreen({ navigation }: Props) {
         }
       }, 260);
     },
-    [busy, category.key, isLastRound, navigation, selections]
+    [busy, category.key, isLastRound, navigation, selections, tone]
   );
 
   const handleBack = () => {

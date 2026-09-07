@@ -1,8 +1,9 @@
-import { DiaryEntry } from '../types';
+import { DiaryEntry, ToneKey } from '../types';
 
 export type RootStackParamList = {
   Home: undefined;
-  CardSelect: undefined;
+  ToneSelect: undefined;
+  CardSelect: { tone: ToneKey };
   Result: { entry: DiaryEntry; fromHistory?: boolean };
   History: undefined;
 };
