@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Daily Pieces",
+    "slug": "daily-pieces",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "dailypieces",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dailypieces.app",
+      "infoPlist": {
+        "NSPhotoLibraryAddUsageDescription": "완성된 일기 카드 이미지를 사진 보관함에 저장하기 위해 접근 권한이 필요해요."
+      }
+    },
+    "android": {
+      "package": "com.dailypieces.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "완성된 일기 카드 이미지를 사진 보관함에 저장하기 위해 접근 권한이 필요해요.",
+          "savePhotosPermission": "완성된 일기 카드 이미지를 사진 보관함에 저장하기 위해 접근 권한이 필요해요."
+        }
+      ]
+    ]
+  }
+}
