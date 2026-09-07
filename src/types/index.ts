@@ -50,10 +50,12 @@ export type DiaryEntry = {
   dateLabel: string;
   selections: Selections;
   personName?: string;
-  fragmentOverrides: Partial<Record<CategoryKey, string>>;
+  // Final, already-toned text per line (from picking a preset alternative or
+  // typing directly). A line with no override falls back to its default
+  // fragment (or the closer fragment) run through applyTone.
+  lineOverrides: Partial<Record<LineKey, string>>;
   closerFragment: string;
   tone: ToneKey;
-  manualText?: string;
   diaryText: string;
   hashtags: string[];
   paletteKey: PaletteKey;

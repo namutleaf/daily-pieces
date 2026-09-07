@@ -1,73 +1,109 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CATEGORIES } from '../data/words';
 import { DiaryEntry, LineKey } from '../types';
 import { MOOD_PALETTES, DEFAULT_PALETTE } from '../theme';
-import { applyTone, baseFragmentFor } from '../utils/generateDiary';
+import { lineFinalText } from '../utils/generateDiary';
+
+const ALL_LINE_KEYS: LineKey[] = [...CATEGORIES.map((c) => c.key), 'closer'];
 
 type Props = {
   entry: DiaryEntry;
   editing?: boolean;
-  editValue?: string;
-  onChangeEditValue?: (text: string) => void;
+  draftLines?: Partial<Record<LineKey, string>>;
+  onChangeLine?: (key: LineKey, text: string) => void;
   onPressLine?: (key: LineKey) => void;
   large?: boolean;
 };
 
+function LineInput({
+  value,
+  onChangeText,
+  textStyle,
+  color,
+  large,
+}: {
+  value: string;
+  onChangeText: (t: string) => void;
+  textStyle: any;
+  color: string;
+  large?: boolean;
+}) {
+  const lineHeight = large ? 30 : 23;
+  // Guarantee room for at least two wrapped lines up front (some platforms'
+  // web TextInput never fires onContentSizeChange), then grow further if it does.
+  const [height, setHeight] = useState(lineHeight * 2);
+  return (
+    <TextInput
+      style={[textStyle, styles.diaryInput, { color, height }]}
+      value={value}
+      onChangeText={onChangeText}
+      onContentSizeChange={(e) =>
+        setHeight(Math.max(lineHeight * 2, e.nativeEvent.contentSize.height))
+      }
+      multiline
+      scrollEnabled={false}
+    />
+  );
+}
+
 const DiaryCard = forwardRef<View, Props>(
-  ({ entry, editing, editValue, onChangeEditValue, onPressLine, large }, ref) => {
+  ({ entry, editing, draftLines, onChangeLine, onPressLine, large }, ref) => {
     const palette = MOOD_PALETTES[entry.paletteKey] ?? DEFAULT_PALETTE;
-    const interactive = !editing && !entry.manualText && !!onPressLine;
+    const textStyle = [styles.diaryText, large && styles.diaryTextLarge];
+
+    const currentText = (key: LineKey) =>
+      lineFinalText(entry.selections, key, entry.lineOverrides, entry.closerFragment, entry.tone, entry.personName);
 
     return (
-      <View ref={ref} collapsable={false} style={styles.wrapper}>
+      <View ref={ref} collapsable={false} style={editing ? styles.wrapperEditing : styles.wrapper}>
         <LinearGradient
           colors={palette.colors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <View style={styles.card}>
-          <View style={styles.headerRow}>
+        <View style={editing ? styles.cardEditing : styles.card}>
+          <View style={[styles.headerRow, editing && styles.headerRowEditing]}>
             <Text style={[styles.brand, { color: palette.text }]}>Daily Pieces</Text>
             <Text style={[styles.date, { color: palette.subtext }]}>{entry.dateLabel}</Text>
           </View>
 
-          <View style={styles.bodyWrap}>
+          <View style={editing ? styles.bodyWrapEditing : styles.bodyWrap}>
             {editing ? (
-              <TextInput
-                style={[
-                  styles.diaryText,
-                  styles.diaryInput,
-                  large && styles.diaryTextLarge,
-                  { color: palette.text },
-                ]}
-                value={editValue}
-                onChangeText={onChangeEditValue}
-                multiline
-                autoFocus
-                placeholder="일기를 직접 적어보세요"
-                placeholderTextColor={palette.subtext}
-              />
-            ) : entry.manualText || !interactive ? (
-              <Text style={[styles.diaryText, large && styles.diaryTextLarge, { color: palette.text }]}>
-                {entry.diaryText}
-              </Text>
+              <View>
+                {ALL_LINE_KEYS.map((key, i) => (
+                  <View key={key} style={i === ALL_LINE_KEYS.length - 1 && styles.closerSpacer}>
+                    <LineInput
+                      value={draftLines?.[key] ?? currentText(key)}
+                      onChangeText={(t) => onChangeLine?.(key, t)}
+                      textStyle={textStyle}
+                      color={palette.text}
+                      large={large}
+                    />
+                  </View>
+                ))}
+              </View>
             ) : (
               <View>
                 {CATEGORIES.map((c) => (
-                  <Pressable key={c.key} onPress={() => onPressLine?.(c.key)} hitSlop={4}>
-                    <Text style={[styles.diaryText, large && styles.diaryTextLarge, { color: palette.text }]}>
-                      {applyTone(baseFragmentFor(entry.selections, c.key, entry.fragmentOverrides, entry.personName), entry.tone)}
-                    </Text>
+                  <Pressable
+                    key={c.key}
+                    onPress={() => onPressLine?.(c.key)}
+                    hitSlop={4}
+                    style={({ pressed }) => pressed && styles.linePressed}
+                  >
+                    <Text style={[...textStyle, { color: palette.text }]}>{currentText(c.key)}</Text>
                   </Pressable>
                 ))}
                 <View style={{ height: large ? 30 : 23 }} />
-                <Pressable onPress={() => onPressLine?.('closer')} hitSlop={4}>
-                  <Text style={[styles.diaryText, large && styles.diaryTextLarge, { color: palette.text }]}>
-                    {applyTone(entry.closerFragment, entry.tone)}
-                  </Text>
+                <Pressable
+                  onPress={() => onPressLine?.('closer')}
+                  hitSlop={4}
+                  style={({ pressed }) => pressed && styles.linePressed}
+                >
+                  <Text style={[...textStyle, { color: palette.text }]}>{currentText('closer')}</Text>
                 </Pressable>
               </View>
             )}
@@ -97,15 +133,27 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
+  wrapperEditing: {
+    width: '100%',
+    borderRadius: 24,
+    overflow: 'hidden',
+    position: 'relative',
+  },
   card: {
     flex: 1,
     padding: 26,
     justifyContent: 'space-between',
   },
+  cardEditing: {
+    padding: 26,
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerRowEditing: {
+    marginBottom: 20,
   },
   brand: {
     fontSize: 14,
@@ -120,6 +168,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  bodyWrapEditing: {
+    marginBottom: 20,
+  },
+  linePressed: {
+    opacity: 0.55,
+  },
   diaryText: {
     fontSize: 15,
     lineHeight: 23,
@@ -130,14 +184,15 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   diaryInput: {
-    padding: 8,
-    margin: -8,
+    padding: 4,
+    margin: -4,
+    marginBottom: 2,
     textAlignVertical: 'top',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(0,0,0,0.25)',
     borderRadius: 8,
     outlineWidth: 0,
+  },
+  closerSpacer: {
+    marginTop: 14,
   },
   tagsRow: {
     flexDirection: 'row',

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { composeDiaryText } from './generateDiary';
-import { CategoryKey, DiaryEntry } from '../types';
+import { DiaryEntry, LineKey } from '../types';
 
 const KEY = 'daily_pieces_entries_v1';
 const NAMES_KEY = 'daily_pieces_last_names_v1';
@@ -28,51 +28,27 @@ export async function removeEntry(id: string): Promise<void> {
   await AsyncStorage.setItem(KEY, JSON.stringify(next));
 }
 
-export async function updateManualText(id: string, manualText: string): Promise<void> {
-  const entries = await loadEntries();
-  const next = entries.map((e) =>
-    e.id === id ? { ...e, manualText, diaryText: manualText } : e
-  );
-  await AsyncStorage.setItem(KEY, JSON.stringify(next));
-}
-
-export async function updateEntryFragment(
+// Merges one or more final (already-toned) line texts into an entry's
+// overrides, whether they came from picking a preset alternative or typing
+// directly — both go through this single path so word-swap keeps working
+// no matter how a line was last changed.
+export async function updateLineOverrides(
   id: string,
-  categoryKey: CategoryKey,
-  fragment: string
+  patch: Partial<Record<LineKey, string>>
 ): Promise<DiaryEntry | null> {
   const entries = await loadEntries();
   let updated: DiaryEntry | null = null;
   const next = entries.map((e) => {
     if (e.id !== id) return e;
-    const fragmentOverrides = { ...e.fragmentOverrides, [categoryKey]: fragment };
+    const lineOverrides = { ...e.lineOverrides, ...patch };
     const diaryText = composeDiaryText(
       e.selections,
-      fragmentOverrides,
+      lineOverrides,
       e.closerFragment,
       e.tone,
       e.personName
     );
-    updated = { ...e, fragmentOverrides, diaryText, manualText: undefined };
-    return updated;
-  });
-  await AsyncStorage.setItem(KEY, JSON.stringify(next));
-  return updated;
-}
-
-export async function updateEntryCloser(id: string, closerFragment: string): Promise<DiaryEntry | null> {
-  const entries = await loadEntries();
-  let updated: DiaryEntry | null = null;
-  const next = entries.map((e) => {
-    if (e.id !== id) return e;
-    const diaryText = composeDiaryText(
-      e.selections,
-      e.fragmentOverrides,
-      closerFragment,
-      e.tone,
-      e.personName
-    );
-    updated = { ...e, closerFragment, diaryText, manualText: undefined };
+    updated = { ...e, lineOverrides, diaryText };
     return updated;
   });
   await AsyncStorage.setItem(KEY, JSON.stringify(next));

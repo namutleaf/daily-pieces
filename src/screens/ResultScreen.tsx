@@ -17,57 +17,60 @@ import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import DiaryCard from '../components/DiaryCard';
 import { LineKey } from '../types';
-import { applyTone, baseFragmentFor, CLOSER_OPTIONS } from '../utils/generateDiary';
-import {
-  removeEntry,
-  updateEntryCloser,
-  updateEntryFragment,
-  updateManualText,
-} from '../utils/storage';
+import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '../utils/generateDiary';
+import { removeEntry, updateLineOverrides } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 type Option = { label: string; fragment: string };
+
+const ALL_LINE_KEYS: LineKey[] = ['weather', 'mood', 'person', 'place', 'activity', 'moment', 'closer'];
 
 export default function ResultScreen({ route, navigation }: Props) {
   const { fromHistory } = route.params;
   const [entry, setEntry] = useState(route.params.entry);
   const [editing, setEditing] = useState(false);
-  const [draftText, setDraftText] = useState(entry.diaryText);
+  const [draftLines, setDraftLines] = useState<Partial<Record<LineKey, string>>>({});
   const cardRef = useRef<View>(null);
   const [working, setWorking] = useState(false);
   const [pickerKey, setPickerKey] = useState<LineKey | null>(null);
   const [pendingSwap, setPendingSwap] = useState<{ key: LineKey; option: Option } | null>(null);
 
+  const getCurrentFinalText = (key: LineKey) =>
+    lineFinalText(entry.selections, key, entry.lineOverrides, entry.closerFragment, entry.tone, entry.personName);
+
   const handleOpenEdit = () => {
-    setDraftText(entry.manualText ?? entry.diaryText);
+    setDraftLines({});
     setEditing(true);
   };
 
   const handleCancelEdit = () => setEditing(false);
 
   const handleSaveEdit = async () => {
-    const trimmed = draftText.trim();
-    setEntry((prev) => ({ ...prev, manualText: trimmed, diaryText: trimmed }));
-    await updateManualText(entry.id, trimmed);
+    const patch: Partial<Record<LineKey, string>> = {};
+    ALL_LINE_KEYS.forEach((key) => {
+      const draft = draftLines[key];
+      if (draft !== undefined && draft.trim() !== getCurrentFinalText(key)) {
+        patch[key] = draft.trim();
+      }
+    });
+    if (Object.keys(patch).length > 0) {
+      const updated = await updateLineOverrides(entry.id, patch);
+      if (updated) setEntry(updated);
+    }
     setEditing(false);
   };
 
   const getOptions = (key: LineKey): Option[] => {
     if (key === 'closer') return CLOSER_OPTIONS;
     const word = entry.selections[key];
-    const defaultFragment = baseFragmentFor(entry.selections, key, {}, entry.personName);
+    const defaultFragment = defaultBaseFragment(entry.selections, key, entry.personName);
     return [{ label: word.label, fragment: defaultFragment }, ...(word.variants ?? [])];
-  };
-
-  const getCurrentFragment = (key: LineKey): string => {
-    if (key === 'closer') return entry.closerFragment;
-    return baseFragmentFor(entry.selections, key, entry.fragmentOverrides, entry.personName);
   };
 
   const handlePickOption = (key: LineKey, option: Option) => {
     setPickerKey(null);
-    const current = getCurrentFragment(key);
-    if (option.fragment === current) return;
+    const toned = applyTone(option.fragment, entry.tone);
+    if (toned === getCurrentFinalText(key)) return;
     setPendingSwap({ key, option });
   };
 
@@ -75,10 +78,8 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (!pendingSwap) return;
     const { key, option } = pendingSwap;
     setPendingSwap(null);
-    const updated =
-      key === 'closer'
-        ? await updateEntryCloser(entry.id, option.fragment)
-        : await updateEntryFragment(entry.id, key, option.fragment);
+    const toned = applyTone(option.fragment, entry.tone);
+    const updated = await updateLineOverrides(entry.id, { [key]: toned });
     if (updated) setEntry(updated);
   };
 
@@ -143,9 +144,7 @@ export default function ResultScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scroll}>
         <DiaryCard ref={cardRef} entry={entry} onPressLine={(key) => setPickerKey(key)} />
 
-        {!entry.manualText && (
-          <Text style={styles.hint}>문장을 눌러보면 다른 표현으로 바꿀 수 있어요</Text>
-        )}
+        <Text style={styles.hint}>문장을 눌러보면 다른 표현으로 바꿀 수 있어요</Text>
 
         <View style={styles.actions}>
           <Pressable
@@ -207,15 +206,15 @@ export default function ResultScreen({ route, navigation }: Props) {
               <Text style={[styles.editHeaderBtn, styles.editHeaderDone]}>완료</Text>
             </Pressable>
           </View>
-          <View style={styles.editCardWrap}>
+          <ScrollView contentContainerStyle={styles.editScroll} keyboardShouldPersistTaps="handled">
             <DiaryCard
               entry={entry}
               editing
-              editValue={draftText}
-              onChangeEditValue={setDraftText}
+              draftLines={draftLines}
+              onChangeLine={(key, text) => setDraftLines((prev) => ({ ...prev, [key]: text }))}
               large
             />
-          </View>
+          </ScrollView>
         </SafeAreaView>
       </Modal>
 
@@ -230,20 +229,23 @@ export default function ResultScreen({ route, navigation }: Props) {
             <Text style={styles.sheetTitle}>어떤 표현으로 바꿔볼까요?</Text>
             {pickerKey &&
               getOptions(pickerKey).map((option) => {
-                const isCurrent = option.fragment === getCurrentFragment(pickerKey);
+                const isCurrent = applyTone(option.fragment, entry.tone) === getCurrentFinalText(pickerKey);
                 return (
                   <Pressable
                     key={option.label}
                     style={({ pressed }) => [
                       styles.sheetOption,
                       isCurrent && styles.sheetOptionActive,
-                      pressed && styles.pressed,
+                      pressed && styles.sheetOptionPressed,
                     ]}
                     onPress={() => handlePickOption(pickerKey, option)}
                   >
                     <Text style={styles.sheetOptionLabel}>
                       {isCurrent ? '✓ ' : ''}
                       {option.label}
+                    </Text>
+                    <Text style={styles.sheetOptionPreview}>
+                      {applyTone(option.fragment, entry.tone)}
                     </Text>
                   </Pressable>
                 );
@@ -263,9 +265,7 @@ export default function ResultScreen({ route, navigation }: Props) {
             <Text style={styles.confirmTitle}>문장을 바꿀까요?</Text>
             {pendingSwap && (
               <>
-                <Text style={styles.confirmBefore}>
-                  {applyTone(getCurrentFragment(pendingSwap.key), entry.tone)}
-                </Text>
+                <Text style={styles.confirmBefore}>{getCurrentFinalText(pendingSwap.key)}</Text>
                 <Text style={styles.confirmArrow}>↓</Text>
                 <Text style={styles.confirmAfter}>
                   {applyTone(pendingSwap.option.fragment, entry.tone)}
@@ -382,11 +382,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.ink,
   },
-  editCardWrap: {
-    flex: 1,
+  editScroll: {
+    flexGrow: 1,
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    justifyContent: 'center',
+    paddingBottom: 40,
   },
   backdrop: {
     flex: 1,
@@ -409,18 +408,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sheetOption: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 14,
     backgroundColor: theme.bg,
+  },
+  sheetOptionPressed: {
+    opacity: 0.6,
   },
   sheetOptionActive: {
     backgroundColor: theme.accentSoft,
   },
   sheetOptionLabel: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '800',
     color: theme.ink,
+    textAlign: 'center',
+    marginBottom: 3,
+  },
+  sheetOptionPreview: {
+    fontSize: 12,
+    color: theme.inkSoft,
     textAlign: 'center',
   },
   confirmBackdrop: {

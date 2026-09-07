@@ -1,5 +1,5 @@
 import { CATEGORIES } from '../data/words';
-import { CategoryKey, DiaryEntry, PaletteKey, Selections, ToneKey } from '../types';
+import { CategoryKey, DiaryEntry, LineKey, PaletteKey, Selections, ToneKey } from '../types';
 
 // Every fragment and closer is deliberately written to end in a
 // "~았/었/였다" past-tense form, so the ending "다" can be swapped for a
@@ -31,13 +31,11 @@ export function formatDateLabel(date: Date): string {
   return `${y}년 ${m}월 ${d}일 ${w}요일`;
 }
 
-export function baseFragmentFor(
+export function defaultBaseFragment(
   selections: Selections,
   categoryKey: CategoryKey,
-  fragmentOverrides: Partial<Record<CategoryKey, string>>,
   personName?: string
 ): string {
-  if (fragmentOverrides[categoryKey]) return fragmentOverrides[categoryKey]!;
   const word = selections[categoryKey];
   if (categoryKey === 'person' && word.nameable && personName && word.fragmentTemplate) {
     return word.fragmentTemplate(personName);
@@ -45,17 +43,31 @@ export function baseFragmentFor(
   return word.fragment;
 }
 
+export function lineFinalText(
+  selections: Selections,
+  key: LineKey,
+  lineOverrides: Partial<Record<LineKey, string>>,
+  closerFragment: string,
+  tone: ToneKey,
+  personName?: string
+): string {
+  if (lineOverrides[key] !== undefined) return lineOverrides[key]!;
+  if (key === 'closer') return applyTone(closerFragment, tone);
+  return applyTone(defaultBaseFragment(selections, key, personName), tone);
+}
+
 export function composeDiaryText(
   selections: Selections,
-  fragmentOverrides: Partial<Record<CategoryKey, string>>,
+  lineOverrides: Partial<Record<LineKey, string>>,
   closerFragment: string,
   tone: ToneKey,
   personName?: string
 ): string {
   const lines = CATEGORIES.map((c) =>
-    applyTone(baseFragmentFor(selections, c.key, fragmentOverrides, personName), tone)
+    lineFinalText(selections, c.key, lineOverrides, closerFragment, tone, personName)
   );
-  return [...lines, '', applyTone(closerFragment, tone)].join('\n');
+  const closerLine = lineFinalText(selections, 'closer', lineOverrides, closerFragment, tone, personName);
+  return [...lines, '', closerLine].join('\n');
 }
 
 export function buildDiaryEntry(
@@ -64,9 +76,9 @@ export function buildDiaryEntry(
   personName?: string
 ): DiaryEntry {
   const closerFragment = pickRandom(CLOSER_OPTIONS).fragment;
-  const fragmentOverrides: Partial<Record<CategoryKey, string>> = {};
+  const lineOverrides: Partial<Record<LineKey, string>> = {};
 
-  const diaryText = composeDiaryText(selections, fragmentOverrides, closerFragment, tone, personName);
+  const diaryText = composeDiaryText(selections, lineOverrides, closerFragment, tone, personName);
 
   const hashtags = CATEGORIES.map(
     (c) => `#${selections[c.key].label.replace(/\s+/g, '')}`
@@ -80,7 +92,7 @@ export function buildDiaryEntry(
     dateLabel: formatDateLabel(now),
     selections,
     personName,
-    fragmentOverrides,
+    lineOverrides,
     closerFragment,
     tone,
     diaryText,
