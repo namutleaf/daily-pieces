@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -9,7 +9,7 @@ import { theme } from '../theme';
 import WordCard from '../components/WordCard';
 import ProgressDots from '../components/ProgressDots';
 import { buildDiaryEntry } from '../utils/generateDiary';
-import { saveEntry } from '../utils/storage';
+import { getLastName, saveEntry, setLastName } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
 
@@ -17,15 +17,19 @@ export default function CardSelectScreen({ navigation, route }: Props) {
   const { tone } = route.params;
   const [roundIndex, setRoundIndex] = useState(0);
   const [selections, setSelections] = useState<Partial<Selections>>({});
+  const [personName, setPersonName] = useState<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
+  const [namePrompt, setNamePrompt] = useState<WordItem | null>(null);
+  const [nameInput, setNameInput] = useState('');
 
   const category = CATEGORIES[roundIndex];
   const isLastRound = roundIndex === CATEGORIES.length - 1;
 
-  const handlePick = useCallback(
-    async (word: WordItem) => {
-      if (busy) return;
+  const commitSelection = useCallback(
+    (word: WordItem, name: string | undefined) => {
       setBusy(true);
+      const effectivePersonName = category.key === 'person' ? name : personName;
+      if (category.key === 'person') setPersonName(name);
 
       const nextSelections: Selections = {
         ...(selections as Selections),
@@ -35,7 +39,7 @@ export default function CardSelectScreen({ navigation, route }: Props) {
 
       setTimeout(async () => {
         if (isLastRound) {
-          const entry = buildDiaryEntry(nextSelections, tone);
+          const entry = buildDiaryEntry(nextSelections, tone, effectivePersonName);
           await saveEntry(entry);
           navigation.replace('Result', { entry });
         } else {
@@ -44,8 +48,42 @@ export default function CardSelectScreen({ navigation, route }: Props) {
         }
       }, 260);
     },
-    [busy, category.key, isLastRound, navigation, selections, tone]
+    [category.key, isLastRound, navigation, personName, selections, tone]
   );
+
+  const handlePick = useCallback(
+    async (word: WordItem) => {
+      if (busy) return;
+      if (category.key === 'person' && word.nameable) {
+        const last = await getLastName(word.id);
+        setNameInput(last ?? '');
+        setNamePrompt(word);
+        return;
+      }
+      commitSelection(word, undefined);
+    },
+    [busy, category.key, commitSelection]
+  );
+
+  const handleNameSkip = () => {
+    if (!namePrompt) return;
+    const word = namePrompt;
+    setNamePrompt(null);
+    commitSelection(word, undefined);
+  };
+
+  const handleNameConfirm = async () => {
+    if (!namePrompt) return;
+    const word = namePrompt;
+    const trimmed = nameInput.trim();
+    setNamePrompt(null);
+    if (trimmed) {
+      await setLastName(word.id, trimmed);
+      commitSelection(word, trimmed);
+    } else {
+      commitSelection(word, undefined);
+    }
+  };
 
   const handleBack = () => {
     if (roundIndex === 0) {
@@ -89,6 +127,42 @@ export default function CardSelectScreen({ navigation, route }: Props) {
           />
         ))}
       </ScrollView>
+
+      <Modal visible={namePrompt !== null} transparent animationType="fade">
+        <View style={styles.backdrop}>
+          <View style={styles.promptCard}>
+            <Text style={styles.promptEmoji}>{namePrompt?.emoji}</Text>
+            <Text style={styles.promptTitle}>{namePrompt?.label}의 이름이 있나요?</Text>
+            <Text style={styles.promptSub}>입력하면 일기에 이름이 들어가요 (선택)</Text>
+            <TextInput
+              style={styles.promptInput}
+              value={nameInput}
+              onChangeText={setNameInput}
+              placeholder="예: 초코"
+              placeholderTextColor={theme.inkSoft}
+              autoFocus
+            />
+            <View style={styles.promptActions}>
+              <Pressable
+                style={({ pressed }) => [styles.promptBtn, pressed && styles.pressed]}
+                onPress={handleNameSkip}
+              >
+                <Text style={styles.promptBtnText}>건너뛰기</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.promptBtn,
+                  styles.promptBtnPrimary,
+                  pressed && styles.pressed,
+                ]}
+                onPress={handleNameConfirm}
+              >
+                <Text style={styles.promptBtnPrimaryText}>확인</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -137,5 +211,76 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingBottom: 24,
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  promptCard: {
+    width: '100%',
+    backgroundColor: theme.surface,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+  },
+  promptEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  promptTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: theme.ink,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  promptSub: {
+    fontSize: 13,
+    color: theme.inkSoft,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  promptInput: {
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: theme.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: theme.ink,
+    marginBottom: 18,
+    outlineWidth: 0,
+  },
+  promptActions: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  promptBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: theme.bg,
+  },
+  promptBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.inkSoft,
+  },
+  promptBtnPrimary: {
+    backgroundColor: theme.accent,
+  },
+  promptBtnPrimaryText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });

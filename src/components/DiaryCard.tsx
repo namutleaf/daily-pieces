@@ -1,19 +1,24 @@
 import React, { forwardRef } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { DiaryEntry } from '../types';
+import { CATEGORIES } from '../data/words';
+import { DiaryEntry, LineKey } from '../types';
 import { MOOD_PALETTES, DEFAULT_PALETTE } from '../theme';
+import { applyTone, baseFragmentFor } from '../utils/generateDiary';
 
 type Props = {
   entry: DiaryEntry;
   editing?: boolean;
   editValue?: string;
   onChangeEditValue?: (text: string) => void;
+  onPressLine?: (key: LineKey) => void;
+  large?: boolean;
 };
 
 const DiaryCard = forwardRef<View, Props>(
-  ({ entry, editing, editValue, onChangeEditValue }, ref) => {
+  ({ entry, editing, editValue, onChangeEditValue, onPressLine, large }, ref) => {
     const palette = MOOD_PALETTES[entry.paletteKey] ?? DEFAULT_PALETTE;
+    const interactive = !editing && !entry.manualText && !!onPressLine;
 
     return (
       <View ref={ref} collapsable={false} style={styles.wrapper}>
@@ -32,7 +37,12 @@ const DiaryCard = forwardRef<View, Props>(
           <View style={styles.bodyWrap}>
             {editing ? (
               <TextInput
-                style={[styles.diaryText, styles.diaryInput, { color: palette.text }]}
+                style={[
+                  styles.diaryText,
+                  styles.diaryInput,
+                  large && styles.diaryTextLarge,
+                  { color: palette.text },
+                ]}
                 value={editValue}
                 onChangeText={onChangeEditValue}
                 multiline
@@ -40,8 +50,26 @@ const DiaryCard = forwardRef<View, Props>(
                 placeholder="일기를 직접 적어보세요"
                 placeholderTextColor={palette.subtext}
               />
+            ) : entry.manualText || !interactive ? (
+              <Text style={[styles.diaryText, large && styles.diaryTextLarge, { color: palette.text }]}>
+                {entry.diaryText}
+              </Text>
             ) : (
-              <Text style={[styles.diaryText, { color: palette.text }]}>{entry.diaryText}</Text>
+              <View>
+                {CATEGORIES.map((c) => (
+                  <Pressable key={c.key} onPress={() => onPressLine?.(c.key)} hitSlop={4}>
+                    <Text style={[styles.diaryText, large && styles.diaryTextLarge, { color: palette.text }]}>
+                      {applyTone(baseFragmentFor(entry.selections, c.key, entry.fragmentOverrides, entry.personName), entry.tone)}
+                    </Text>
+                  </Pressable>
+                ))}
+                <View style={{ height: large ? 30 : 23 }} />
+                <Pressable onPress={() => onPressLine?.('closer')} hitSlop={4}>
+                  <Text style={[styles.diaryText, large && styles.diaryTextLarge, { color: palette.text }]}>
+                    {applyTone(entry.closerFragment, entry.tone)}
+                  </Text>
+                </Pressable>
+              </View>
             )}
           </View>
 
@@ -96,6 +124,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 23,
     fontWeight: '500',
+  },
+  diaryTextLarge: {
+    fontSize: 19,
+    lineHeight: 30,
   },
   diaryInput: {
     padding: 8,
