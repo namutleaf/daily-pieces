@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -17,8 +17,14 @@ import { RootStackParamList } from '../navigation/types';
 import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
 import DiaryCard from '../components/DiaryCard';
 import { LineKey, PaletteKey } from '../types';
+import { getFontOption } from '../data/fonts';
 import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '../utils/generateDiary';
-import { removeEntry, updateLineOverrides, updatePaletteOverride } from '../utils/storage';
+import {
+  getFontPreference,
+  removeEntry,
+  updateLineOverrides,
+  updatePaletteOverride,
+} from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 type Option = { label: string; fragment: string };
@@ -35,6 +41,11 @@ export default function ResultScreen({ route, navigation }: Props) {
   const [pickerKey, setPickerKey] = useState<LineKey | null>(null);
   const [pendingSwap, setPendingSwap] = useState<{ key: LineKey; option: Option } | null>(null);
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
+  const [fontFamily, setFontFamily] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    getFontPreference().then((key) => setFontFamily(getFontOption(key).fontFamily));
+  }, []);
 
   const handlePickPalette = async (key: PaletteKey | undefined) => {
     setBgPickerOpen(false);
@@ -154,6 +165,7 @@ export default function ResultScreen({ route, navigation }: Props) {
           entry={entry}
           onPressLine={(key) => setPickerKey(key)}
           onLongPressCard={() => setBgPickerOpen(true)}
+          fontFamily={fontFamily}
         />
 
         <Text style={styles.hint}>
@@ -227,6 +239,7 @@ export default function ResultScreen({ route, navigation }: Props) {
               draftLines={draftLines}
               onChangeLine={(key, text) => setDraftLines((prev) => ({ ...prev, [key]: text }))}
               large
+              fontFamily={fontFamily}
             />
           </ScrollView>
         </SafeAreaView>

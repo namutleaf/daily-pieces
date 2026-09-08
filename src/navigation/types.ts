@@ -6,4 +6,5 @@ export type RootStackParamList = {
   CardSelect: { tone: ToneKey };
   Result: { entry: DiaryEntry; fromHistory?: boolean };
   History: undefined;
+  FontSettings: undefined;
 };

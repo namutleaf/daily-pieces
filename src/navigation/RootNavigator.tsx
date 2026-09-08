@@ -7,6 +7,7 @@ import ToneSelectScreen from '../screens/ToneSelectScreen';
 import CardSelectScreen from '../screens/CardSelectScreen';
 import ResultScreen from '../screens/ResultScreen';
 import HistoryScreen from '../screens/HistoryScreen';
+import FontSettingsScreen from '../screens/FontSettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -19,6 +20,7 @@ export default function RootNavigator() {
         <Stack.Screen name="CardSelect" component={CardSelectScreen} />
         <Stack.Screen name="Result" component={ResultScreen} />
         <Stack.Screen name="History" component={HistoryScreen} />
+        <Stack.Screen name="FontSettings" component={FontSettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

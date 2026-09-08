@@ -1,9 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { composeDiaryText } from './generateDiary';
 import { DiaryEntry, LineKey, PaletteKey } from '../types';
+import { FontKey } from '../data/fonts';
 
 const KEY = 'daily_pieces_entries_v1';
 const NAMES_KEY = 'daily_pieces_last_names_v1';
+const FONT_KEY = 'daily_pieces_font_pref_v1';
 
 export async function loadEntries(): Promise<DiaryEntry[]> {
   try {
@@ -68,6 +70,23 @@ export async function updatePaletteOverride(
   });
   await AsyncStorage.setItem(KEY, JSON.stringify(next));
   return updated;
+}
+
+export async function getFontPreference(): Promise<FontKey> {
+  try {
+    const raw = await AsyncStorage.getItem(FONT_KEY);
+    return (raw as FontKey) ?? 'system';
+  } catch {
+    return 'system';
+  }
+}
+
+export async function setFontPreference(key: FontKey): Promise<void> {
+  try {
+    await AsyncStorage.setItem(FONT_KEY, key);
+  } catch {
+    // best-effort only
+  }
 }
 
 export async function getLastName(wordId: string): Promise<string | null> {

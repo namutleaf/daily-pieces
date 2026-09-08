@@ -16,6 +16,7 @@ type Props = {
   onPressLine?: (key: LineKey) => void;
   onLongPressCard?: () => void;
   large?: boolean;
+  fontFamily?: string;
 };
 
 function LineInput({
@@ -50,9 +51,10 @@ function LineInput({
 }
 
 const DiaryCard = forwardRef<View, Props>(
-  ({ entry, editing, draftLines, onChangeLine, onPressLine, onLongPressCard, large }, ref) => {
+  ({ entry, editing, draftLines, onChangeLine, onPressLine, onLongPressCard, large, fontFamily }, ref) => {
     const palette = MOOD_PALETTES[entry.paletteOverride ?? entry.paletteKey] ?? DEFAULT_PALETTE;
-    const textStyle = [styles.diaryText, large && styles.diaryTextLarge];
+    const fontStyle = fontFamily ? { fontFamily, fontWeight: 'normal' as const } : null;
+    const textStyle = [styles.diaryText, large && styles.diaryTextLarge, fontStyle];
 
     const currentText = (key: LineKey) =>
       lineFinalText(entry.selections, key, entry.lineOverrides, entry.closerFragment, entry.tone, entry.personName);

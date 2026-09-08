@@ -10,6 +10,16 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 export default function HomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.topBar}>
+        <Pressable
+          style={({ pressed }) => pressed && styles.pressed}
+          onPress={() => navigation.navigate('FontSettings')}
+          hitSlop={12}
+        >
+          <Text style={styles.settingsText}>⚙️ 글꼴 설정</Text>
+        </Pressable>
+      </View>
+
       <View style={styles.hero}>
         <Text style={styles.kicker}>DAILY PIECES</Text>
         <Text style={styles.title}>단어 조각으로{'\n'}오늘을 기록해요</Text>
@@ -45,8 +55,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingVertical: 40,
   },
+  topBar: {
+    alignItems: 'flex-end',
+  },
+  settingsText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.inkSoft,
+  },
   hero: {
-    marginTop: 40,
+    marginTop: 24,
   },
   kicker: {
     fontSize: 13,
