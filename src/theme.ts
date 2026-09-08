@@ -29,3 +29,5 @@ export const MOOD_PALETTES: Record<PaletteKey, MoodPalette> = {
 };
 
 export const DEFAULT_PALETTE: MoodPalette = MOOD_PALETTES['평온'];
+
+export const PALETTE_KEYS = Object.keys(MOOD_PALETTES) as PaletteKey[];

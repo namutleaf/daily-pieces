@@ -59,4 +59,7 @@ export type DiaryEntry = {
   diaryText: string;
   hashtags: string[];
   paletteKey: PaletteKey;
+  // User-chosen background (via long-press on the card), overriding the
+  // mood-derived paletteKey. Undefined means "use the mood's own color."
+  paletteOverride?: PaletteKey;
 };

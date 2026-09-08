@@ -14,6 +14,7 @@ type Props = {
   draftLines?: Partial<Record<LineKey, string>>;
   onChangeLine?: (key: LineKey, text: string) => void;
   onPressLine?: (key: LineKey) => void;
+  onLongPressCard?: () => void;
   large?: boolean;
 };
 
@@ -49,8 +50,8 @@ function LineInput({
 }
 
 const DiaryCard = forwardRef<View, Props>(
-  ({ entry, editing, draftLines, onChangeLine, onPressLine, large }, ref) => {
-    const palette = MOOD_PALETTES[entry.paletteKey] ?? DEFAULT_PALETTE;
+  ({ entry, editing, draftLines, onChangeLine, onPressLine, onLongPressCard, large }, ref) => {
+    const palette = MOOD_PALETTES[entry.paletteOverride ?? entry.paletteKey] ?? DEFAULT_PALETTE;
     const textStyle = [styles.diaryText, large && styles.diaryTextLarge];
 
     const currentText = (key: LineKey) =>
@@ -64,7 +65,12 @@ const DiaryCard = forwardRef<View, Props>(
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <View style={editing ? styles.cardEditing : styles.card}>
+        <Pressable
+          style={editing ? styles.cardEditing : styles.card}
+          disabled={editing || !onLongPressCard}
+          onLongPress={onLongPressCard}
+          delayLongPress={450}
+        >
           <View style={[styles.headerRow, editing && styles.headerRowEditing]}>
             <Text style={[styles.brand, { color: palette.text }]}>Daily Pieces</Text>
             <Text style={[styles.date, { color: palette.subtext }]}>{entry.dateLabel}</Text>
@@ -91,6 +97,8 @@ const DiaryCard = forwardRef<View, Props>(
                   <Pressable
                     key={c.key}
                     onPress={() => onPressLine?.(c.key)}
+                    onLongPress={onLongPressCard}
+                    delayLongPress={450}
                     hitSlop={4}
                     style={({ pressed }) => pressed && styles.linePressed}
                   >
@@ -100,6 +108,8 @@ const DiaryCard = forwardRef<View, Props>(
                 <View style={{ height: large ? 30 : 23 }} />
                 <Pressable
                   onPress={() => onPressLine?.('closer')}
+                  onLongPress={onLongPressCard}
+                  delayLongPress={450}
                   hitSlop={4}
                   style={({ pressed }) => pressed && styles.linePressed}
                 >
@@ -116,7 +126,7 @@ const DiaryCard = forwardRef<View, Props>(
               </Text>
             ))}
           </View>
-        </View>
+        </Pressable>
       </View>
     );
   }

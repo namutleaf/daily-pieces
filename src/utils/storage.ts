@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { composeDiaryText } from './generateDiary';
-import { DiaryEntry, LineKey } from '../types';
+import { DiaryEntry, LineKey, PaletteKey } from '../types';
 
 const KEY = 'daily_pieces_entries_v1';
 const NAMES_KEY = 'daily_pieces_last_names_v1';
@@ -49,6 +49,21 @@ export async function updateLineOverrides(
       e.personName
     );
     updated = { ...e, lineOverrides, diaryText };
+    return updated;
+  });
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+  return updated;
+}
+
+export async function updatePaletteOverride(
+  id: string,
+  paletteOverride: PaletteKey | undefined
+): Promise<DiaryEntry | null> {
+  const entries = await loadEntries();
+  let updated: DiaryEntry | null = null;
+  const next = entries.map((e) => {
+    if (e.id !== id) return e;
+    updated = { ...e, paletteOverride };
     return updated;
   });
   await AsyncStorage.setItem(KEY, JSON.stringify(next));

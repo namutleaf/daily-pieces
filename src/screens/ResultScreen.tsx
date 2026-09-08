@@ -14,11 +14,11 @@ import { captureRef } from 'react-native-view-shot';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { RootStackParamList } from '../navigation/types';
-import { theme } from '../theme';
+import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
 import DiaryCard from '../components/DiaryCard';
-import { LineKey } from '../types';
+import { LineKey, PaletteKey } from '../types';
 import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '../utils/generateDiary';
-import { removeEntry, updateLineOverrides } from '../utils/storage';
+import { removeEntry, updateLineOverrides, updatePaletteOverride } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 type Option = { label: string; fragment: string };
@@ -34,6 +34,13 @@ export default function ResultScreen({ route, navigation }: Props) {
   const [working, setWorking] = useState(false);
   const [pickerKey, setPickerKey] = useState<LineKey | null>(null);
   const [pendingSwap, setPendingSwap] = useState<{ key: LineKey; option: Option } | null>(null);
+  const [bgPickerOpen, setBgPickerOpen] = useState(false);
+
+  const handlePickPalette = async (key: PaletteKey | undefined) => {
+    setBgPickerOpen(false);
+    const updated = await updatePaletteOverride(entry.id, key);
+    if (updated) setEntry(updated);
+  };
 
   const getCurrentFinalText = (key: LineKey) =>
     lineFinalText(entry.selections, key, entry.lineOverrides, entry.closerFragment, entry.tone, entry.personName);
@@ -142,9 +149,16 @@ export default function ResultScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <DiaryCard ref={cardRef} entry={entry} onPressLine={(key) => setPickerKey(key)} />
+        <DiaryCard
+          ref={cardRef}
+          entry={entry}
+          onPressLine={(key) => setPickerKey(key)}
+          onLongPressCard={() => setBgPickerOpen(true)}
+        />
 
-        <Text style={styles.hint}>문장을 눌러보면 다른 표현으로 바꿀 수 있어요</Text>
+        <Text style={styles.hint}>
+          문장을 눌러보면 다른 표현으로, 길게 누르면 배경을 바꿀 수 있어요
+        </Text>
 
         <View style={styles.actions}>
           <Pressable
@@ -292,6 +306,50 @@ export default function ResultScreen({ route, navigation }: Props) {
             </View>
           </View>
         </View>
+      </Modal>
+
+      <Modal
+        visible={bgPickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBgPickerOpen(false)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setBgPickerOpen(false)}>
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>배경을 골라보세요</Text>
+            <View style={styles.swatchGrid}>
+              <Pressable
+                style={({ pressed }) => [styles.swatchItem, pressed && styles.sheetOptionPressed]}
+                onPress={() => handlePickPalette(undefined)}
+              >
+                <View style={[styles.swatchAuto, !entry.paletteOverride && styles.swatchActive]}>
+                  <Text style={styles.swatchAutoText}>기본</Text>
+                </View>
+                <Text style={styles.swatchLabel}>기분대로</Text>
+              </Pressable>
+              {PALETTE_KEYS.map((key) => {
+                const palette = MOOD_PALETTES[key];
+                const isActive = entry.paletteOverride === key;
+                return (
+                  <Pressable
+                    key={key}
+                    style={({ pressed }) => [styles.swatchItem, pressed && styles.sheetOptionPressed]}
+                    onPress={() => handlePickPalette(key)}
+                  >
+                    <View
+                      style={[
+                        styles.swatch,
+                        { backgroundColor: palette.colors[1] },
+                        isActive && styles.swatchActive,
+                      ]}
+                    />
+                    <Text style={styles.swatchLabel}>{key}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );
@@ -493,5 +551,48 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#fff',
+  },
+  swatchGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 16,
+    paddingTop: 8,
+  },
+  swatchItem: {
+    alignItems: 'center',
+    width: 64,
+  },
+  swatch: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  swatchAuto: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    backgroundColor: theme.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchAutoText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: theme.inkSoft,
+  },
+  swatchActive: {
+    borderColor: theme.accent,
+  },
+  swatchLabel: {
+    marginTop: 6,
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.inkSoft,
+    textAlign: 'center',
   },
 });
