@@ -4,11 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { CATEGORIES } from '../data/words';
-import { CategoryKey, Selections, WordItem } from '../types';
+import { CategoryKey, DiaryEntry, Selections, WordItem } from '../types';
 import { theme } from '../theme';
 import WordCard from '../components/WordCard';
 import ProgressDots from '../components/ProgressDots';
+import MoodMessageModal from '../components/MoodMessageModal';
 import { buildDiaryEntry } from '../utils/generateDiary';
+import { pickMoodMessage } from '../data/moodMessages';
 import { getLastName, saveEntry, setLastName } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
@@ -21,6 +23,8 @@ export default function CardSelectScreen({ navigation, route }: Props) {
   const [busy, setBusy] = useState(false);
   const [namePrompt, setNamePrompt] = useState<WordItem | null>(null);
   const [nameInput, setNameInput] = useState('');
+  const [pendingEntry, setPendingEntry] = useState<DiaryEntry | null>(null);
+  const [moodMessage, setMoodMessage] = useState('');
 
   const category = CATEGORIES[roundIndex];
   const isLastRound = roundIndex === CATEGORIES.length - 1;
@@ -41,7 +45,9 @@ export default function CardSelectScreen({ navigation, route }: Props) {
         if (isLastRound) {
           const entry = buildDiaryEntry(nextSelections, tone, effectivePersonName);
           await saveEntry(entry);
-          navigation.replace('Result', { entry });
+          setMoodMessage(pickMoodMessage(entry.paletteKey));
+          setPendingEntry(entry);
+          setBusy(false);
         } else {
           setRoundIndex((i) => i + 1);
           setBusy(false);
@@ -83,6 +89,11 @@ export default function CardSelectScreen({ navigation, route }: Props) {
     } else {
       commitSelection(word, undefined);
     }
+  };
+
+  const handleContinueToResult = () => {
+    if (!pendingEntry) return;
+    navigation.replace('Result', { entry: pendingEntry });
   };
 
   const handleBack = () => {
@@ -163,6 +174,15 @@ export default function CardSelectScreen({ navigation, route }: Props) {
           </View>
         </View>
       </Modal>
+
+      {pendingEntry && (
+        <MoodMessageModal
+          visible={pendingEntry !== null}
+          paletteKey={pendingEntry.paletteKey}
+          message={moodMessage}
+          onContinue={handleContinueToResult}
+        />
+      )}
     </SafeAreaView>
   );
 }
