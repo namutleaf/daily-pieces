@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -15,6 +15,8 @@ import { getLastName, saveEntry, setLastName } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
 
+const SET_SIZE = 8;
+
 export default function CardSelectScreen({ navigation, route }: Props) {
   const { tone } = route.params;
   const [roundIndex, setRoundIndex] = useState(0);
@@ -25,9 +27,17 @@ export default function CardSelectScreen({ navigation, route }: Props) {
   const [nameInput, setNameInput] = useState('');
   const [pendingEntry, setPendingEntry] = useState<DiaryEntry | null>(null);
   const [moodMessage, setMoodMessage] = useState('');
+  const [setIndex, setSetIndex] = useState(0);
 
   const category = CATEGORIES[roundIndex];
   const isLastRound = roundIndex === CATEGORIES.length - 1;
+  const totalSets = Math.ceil(category.words.length / SET_SIZE);
+  const visibleWords = category.words.slice(setIndex * SET_SIZE, setIndex * SET_SIZE + SET_SIZE);
+  const isLastSet = setIndex >= totalSets - 1;
+
+  useEffect(() => {
+    setSetIndex(0);
+  }, [roundIndex]);
 
   const commitSelection = useCallback(
     (word: WordItem, name: string | undefined) => {
@@ -128,7 +138,7 @@ export default function CardSelectScreen({ navigation, route }: Props) {
         contentContainerStyle={styles.grid}
         showsVerticalScrollIndicator={false}
       >
-        {category.words.map((word) => (
+        {visibleWords.map((word) => (
           <WordCard
             key={word.id}
             word={word}
@@ -137,6 +147,17 @@ export default function CardSelectScreen({ navigation, route }: Props) {
             onPress={handlePick}
           />
         ))}
+
+        {totalSets > 1 && (
+          <Pressable
+            style={({ pressed }) => [styles.moreBtn, pressed && styles.pressed]}
+            onPress={() => setSetIndex(isLastSet ? 0 : setIndex + 1)}
+          >
+            <Text style={styles.moreBtnText}>
+              {isLastSet ? '처음부터 다시 보기' : '다른 카드 보기'}
+            </Text>
+          </Pressable>
+        )}
       </ScrollView>
 
       <Modal visible={namePrompt !== null} transparent animationType="fade">
@@ -302,5 +323,20 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.85,
+  },
+  moreBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: theme.border,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  moreBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.accent,
   },
 });

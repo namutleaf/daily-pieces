@@ -87,6 +87,86 @@ export const CATEGORIES: Category[] = [
           { label: '몽환적으로', fragment: '거리가 몽환적으로 흐려졌다' },
         ],
       },
+      {
+        id: 'w9',
+        label: '폭염',
+        emoji: '🔥',
+        fragment: '푹푹 찌는 무더위였다',
+        variants: [
+          { label: '숨 막히는 더위', fragment: '숨 막히는 더위가 이어졌다' },
+          { label: '에어컨 필수', fragment: '에어컨 없이는 버티기 힘들었다' },
+        ],
+      },
+      {
+        id: 'w10',
+        label: '소나기',
+        emoji: '🌦️',
+        fragment: '지나가는 소나기가 한바탕 쏟아졌다',
+        variants: [
+          { label: '갑자기 흠뻑', fragment: '갑작스러운 비에 흠뻑 젖었다' },
+          { label: '더위 식힘', fragment: '소나기 덕에 더위가 한풀 꺾였다' },
+        ],
+      },
+      {
+        id: 'w11',
+        label: '이슬비',
+        emoji: '💧',
+        fragment: '가늘게 이슬비가 내렸다',
+        variants: [
+          { label: '촉촉하게', fragment: '촉촉하게 이슬비가 스며들었다' },
+          { label: '우산 없이도', fragment: '우산 없이도 걸을 만했다' },
+        ],
+      },
+      {
+        id: 'w12',
+        label: '첫서리',
+        emoji: '🥶',
+        fragment: '올가을 첫서리가 내렸다',
+        variants: [
+          { label: '차가운 아침', fragment: '아침 공기가 유난히 차가웠다' },
+          { label: '겨울 예감', fragment: '겨울이 성큼 다가온 것 같았다' },
+        ],
+      },
+      {
+        id: 'w13',
+        label: '노을',
+        emoji: '🌇',
+        fragment: '붉은 노을이 하늘을 물들였다',
+        variants: [
+          { label: '주황빛으로', fragment: '하늘이 온통 주황빛으로 물들었다' },
+          { label: '한참을 바라봄', fragment: '노을을 한참 동안 바라봤다' },
+        ],
+      },
+      {
+        id: 'w14',
+        label: '먹구름',
+        emoji: '⛈️',
+        fragment: '먹구름이 잔뜩 몰려왔다',
+        variants: [
+          { label: '금세 어두워짐', fragment: '하늘이 금세 어두워졌다' },
+          { label: '멀리서 천둥', fragment: '천둥소리가 멀리서 들려왔다' },
+        ],
+      },
+      {
+        id: 'w15',
+        label: '봄바람',
+        emoji: '🌸',
+        fragment: '포근한 봄바람이 불었다',
+        variants: [
+          { label: '꽃향기 실린', fragment: '꽃향기 실린 바람이 불었다' },
+          { label: '외투 없이도', fragment: '겨울 외투를 벗어도 될 만큼 따뜻했다' },
+        ],
+      },
+      {
+        id: 'w16',
+        label: '가을하늘',
+        emoji: '🍂',
+        fragment: '높고 맑은 가을 하늘이었다',
+        variants: [
+          { label: '구름 한 점 없이', fragment: '구름 한 점 없이 청명했다' },
+          { label: '유난히 높은', fragment: '하늘이 유난히 높아 보였다' },
+        ],
+      },
     ],
   },
   {
@@ -172,6 +252,86 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '콩닥콩닥', fragment: '가슴이 콩닥콩닥 뛰었다' },
           { label: '긴장되게', fragment: '괜히 긴장이 되었다' },
+        ],
+      },
+      {
+        id: 'm9',
+        label: '홀가분함',
+        emoji: '🕊️',
+        fragment: '묵은 짐을 던 듯 홀가분했다',
+        variants: [
+          { label: '마음의 짐을 내려놓음', fragment: '마음의 짐을 내려놓은 기분이었다' },
+          { label: '가볍고 자유롭게', fragment: '가볍고 자유로운 하루였다' },
+        ],
+      },
+      {
+        id: 'm10',
+        label: '답답함',
+        emoji: '😤',
+        fragment: '괜히 마음이 답답했다',
+        variants: [
+          { label: '속이 꽉 막힘', fragment: '속이 꽉 막힌 듯했다' },
+          { label: '훌쩍 떠나고 싶음', fragment: '어디론가 훌쩍 떠나고 싶었다' },
+        ],
+      },
+      {
+        id: 'm11',
+        label: '감사함',
+        emoji: '🙏',
+        fragment: '작은 것에도 감사한 마음이 들었다',
+        variants: [
+          { label: '고마운 사람들', fragment: '고마운 사람들이 떠올랐다' },
+          { label: '당연한 게 없음', fragment: '당연한 게 당연하지 않다는 걸 느꼈다' },
+        ],
+      },
+      {
+        id: 'm12',
+        label: '심심함',
+        emoji: '😐',
+        fragment: '딱히 할 일 없이 심심했다',
+        variants: [
+          { label: '무료한 시간', fragment: '무료한 시간이 계속됐다' },
+          { label: '스마트폰만', fragment: '괜히 스마트폰만 만지작거렸다' },
+        ],
+      },
+      {
+        id: 'm13',
+        label: '짜릿함',
+        emoji: '⚡',
+        fragment: '짜릿한 손맛에 기분이 좋아졌다',
+        variants: [
+          { label: '심장이 쫄깃', fragment: '심장이 쫄깃해지는 순간이었다' },
+          { label: '전율이 느껴짐', fragment: '짜릿한 전율이 느껴졌다' },
+        ],
+      },
+      {
+        id: 'm14',
+        label: '몽글몽글함',
+        emoji: '🐑',
+        fragment: '마음이 몽글몽글해졌다',
+        variants: [
+          { label: '따뜻하게', fragment: '마음이 몽글몽글 따뜻해졌다' },
+          { label: '웃음이 새어나옴', fragment: '괜히 웃음이 새어 나왔다' },
+        ],
+      },
+      {
+        id: 'm15',
+        label: '허전함',
+        emoji: '🍂',
+        fragment: '괜스레 마음 한구석이 허전했다',
+        variants: [
+          { label: '뭔가 빠진 듯', fragment: '뭔가 빠진 듯한 기분이었다' },
+          { label: '쓸쓸하게', fragment: '괜히 마음이 쓸쓸했다' },
+        ],
+      },
+      {
+        id: 'm16',
+        label: '벅참',
+        emoji: '🌊',
+        fragment: '벅찬 감정이 밀려왔다',
+        variants: [
+          { label: '가슴이 뭉클', fragment: '가슴이 뭉클해졌다' },
+          { label: '말로 못 할 감정', fragment: '말로 표현 못 할 감정이 차올랐다' },
         ],
       },
     ],
@@ -269,6 +429,94 @@ export const CATEGORIES: Category[] = [
           { label: '추억에 잠기다', fragment: '옛 추억이 문득 떠올랐다' },
         ],
       },
+      {
+        id: 'p9',
+        label: '이웃',
+        emoji: '🏘️',
+        fragment: '이웃과 가벼운 인사를 나눴다',
+        nameable: true,
+        fragmentTemplate: (name) => `${withParticleGwa(name)} 가벼운 인사를 나눴다`,
+        variants: [
+          { label: '짧은 대화', fragment: '이웃과 짧은 대화를 나눴다' },
+          { label: '작은 도움', fragment: '이웃에게 작은 도움을 받았다' },
+        ],
+      },
+      {
+        id: 'p10',
+        label: '선생님',
+        emoji: '👩‍🏫',
+        fragment: '선생님께 좋은 이야기를 들었다',
+        variants: [
+          { label: '응원이 힘이 됨', fragment: '선생님의 응원이 힘이 됐다' },
+          { label: '문득 생각남', fragment: '오랜만에 선생님이 생각났다' },
+        ],
+      },
+      {
+        id: 'p11',
+        label: '후배',
+        emoji: '🙋‍♂️',
+        fragment: '후배와 이런저런 이야기를 나눴다',
+        nameable: true,
+        fragmentTemplate: (name) => `${withParticleGwa(name)} 이런저런 이야기를 나눴다`,
+        variants: [
+          { label: '성장이 대견함', fragment: '후배의 성장이 대견했다' },
+          { label: '밥을 사줌', fragment: '후배에게 밥을 사줬다' },
+        ],
+      },
+      {
+        id: 'p12',
+        label: '선배',
+        emoji: '🙋‍♀️',
+        fragment: '선배에게 좋은 조언을 들었다',
+        nameable: true,
+        fragmentTemplate: (name) => `${name}에게 좋은 조언을 들었다`,
+        variants: [
+          { label: '커피 한 잔', fragment: '선배와 커피 한 잔을 했다' },
+          { label: '큰 힘이 됨', fragment: '선배 이야기에 큰 힘을 얻었다' },
+        ],
+      },
+      {
+        id: 'p13',
+        label: '아이',
+        emoji: '👶',
+        fragment: '아이의 웃음에 하루가 풀렸다',
+        variants: [
+          { label: '신나게 놀아줌', fragment: '아이와 신나게 놀아줬다' },
+          { label: '재잘거림', fragment: '아이의 재잘거림이 사랑스러웠다' },
+        ],
+      },
+      {
+        id: 'p14',
+        label: '손님',
+        emoji: '🙇',
+        fragment: '손님을 정성껏 맞이했다',
+        variants: [
+          { label: '즐거운 대화', fragment: '손님과 즐거운 대화를 나눴다' },
+          { label: '활기찬 하루', fragment: '손님 덕분에 하루가 활기찼다' },
+        ],
+      },
+      {
+        id: 'p15',
+        label: '온라인 친구',
+        emoji: '💻',
+        fragment: '온라인 친구와 오랜만에 대화했다',
+        nameable: true,
+        fragmentTemplate: (name) => `${withParticleGwa(name)} 오랜만에 대화했다`,
+        variants: [
+          { label: '같이 게임함', fragment: '온라인 친구와 게임을 했다' },
+          { label: '마음이 통함', fragment: '화면 너머로도 마음이 통했다' },
+        ],
+      },
+      {
+        id: 'p16',
+        label: '단골 사장님',
+        emoji: '🧑‍🍳',
+        fragment: '단골 가게 사장님과 안부를 나눴다',
+        variants: [
+          { label: '서비스를 챙겨줌', fragment: '사장님이 서비스를 챙겨주셨다' },
+          { label: '정겨운 대화', fragment: '정겨운 대화가 오갔다' },
+        ],
+      },
     ],
   },
   {
@@ -354,6 +602,86 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '가로등 아래', fragment: '가로등 켜진 골목길을 걸었다' },
           { label: '추억의 골목', fragment: '어릴 적 추억이 담긴 골목을 지났다' },
+        ],
+      },
+      {
+        id: 'pl9',
+        label: '도서관',
+        emoji: '📚',
+        fragment: '도서관에서 조용한 시간을 보냈다',
+        variants: [
+          { label: '책 냄새 가득', fragment: '책 냄새 가득한 도서관에 머물렀다' },
+          { label: '집중이 잘 됨', fragment: '도서관에서 집중이 잘 됐다' },
+        ],
+      },
+      {
+        id: 'pl10',
+        label: '헬스장',
+        emoji: '🏋️',
+        fragment: '헬스장에서 땀을 흘렸다',
+        variants: [
+          { label: '운동 후 개운함', fragment: '운동 후 개운함을 느꼈다' },
+          { label: '새로운 루틴', fragment: '헬스장에서 새로운 루틴에 도전했다' },
+        ],
+      },
+      {
+        id: 'pl11',
+        label: '편의점',
+        emoji: '🏪',
+        fragment: '편의점에서 군것질을 했다',
+        variants: [
+          { label: '앞에서 잠깐 쉼', fragment: '편의점 앞에서 잠깐 쉬었다' },
+          { label: '야식 구매', fragment: '야식을 사러 편의점에 들렀다' },
+        ],
+      },
+      {
+        id: 'pl12',
+        label: '영화관',
+        emoji: '🎦',
+        fragment: '영화관에서 큰 화면을 즐겼다',
+        variants: [
+          { label: '팝콘 냄새', fragment: '팝콘 냄새 가득한 영화관에 있었다' },
+          { label: '오랜만의 극장', fragment: '오랜만에 극장 나들이를 했다' },
+        ],
+      },
+      {
+        id: 'pl13',
+        label: '서점',
+        emoji: '📖',
+        fragment: '서점에서 책을 구경했다',
+        variants: [
+          { label: '우연한 발견', fragment: '우연히 좋은 책을 발견했다' },
+          { label: '여유롭게', fragment: '서점에서 여유롭게 시간을 보냈다' },
+        ],
+      },
+      {
+        id: 'pl14',
+        label: '시장',
+        emoji: '🧺',
+        fragment: '시장 구경을 하며 걸었다',
+        variants: [
+          { label: '활기찬 분위기', fragment: '활기찬 시장 분위기를 느꼈다' },
+          { label: '먹거리 구경', fragment: '맛있는 먹거리를 구경했다' },
+        ],
+      },
+      {
+        id: 'pl15',
+        label: '놀이공원',
+        emoji: '🎡',
+        fragment: '놀이공원에서 신나게 놀았다',
+        variants: [
+          { label: '놀이기구', fragment: '놀이기구를 타며 소리를 질렀다' },
+          { label: '동심으로', fragment: '오랜만에 동심으로 돌아갔다' },
+        ],
+      },
+      {
+        id: 'pl16',
+        label: '기차역',
+        emoji: '🚉',
+        fragment: '기차역의 분주함 속에 있었다',
+        variants: [
+          { label: '사람들 구경', fragment: '기차를 기다리며 사람들을 구경했다' },
+          { label: '설레는 기다림', fragment: '플랫폼에서 설레는 마음으로 기다렸다' },
         ],
       },
     ],
@@ -443,6 +771,86 @@ export const CATEGORIES: Category[] = [
           { label: '새단장', fragment: '방 분위기를 새롭게 바꿨다' },
         ],
       },
+      {
+        id: 'a9',
+        label: '그림 그리기',
+        emoji: '🎨',
+        fragment: '그림을 그리며 시간을 보냈다',
+        variants: [
+          { label: '편하게 낙서', fragment: '낙서하듯 편하게 그림을 그렸다' },
+          { label: '마음이 편안해짐', fragment: '색을 칠하며 마음이 편안해졌다' },
+        ],
+      },
+      {
+        id: 'a10',
+        label: '사진 찍기',
+        emoji: '📸',
+        fragment: '이곳저곳 사진을 찍었다',
+        variants: [
+          { label: '일상을 담음', fragment: '일상의 순간을 사진에 담았다' },
+          { label: '마음에 드는 한 장', fragment: '마음에 드는 사진 한 장을 건졌다' },
+        ],
+      },
+      {
+        id: 'a11',
+        label: '게임',
+        emoji: '🎮',
+        fragment: '게임에 푹 빠져 시간을 보냈다',
+        variants: [
+          { label: '시간 가는 줄 모름', fragment: '시간 가는 줄 모르고 게임을 했다' },
+          { label: '스트레스 해소', fragment: '오랜만에 스트레스가 풀렸다' },
+        ],
+      },
+      {
+        id: 'a12',
+        label: '공부',
+        emoji: '📚',
+        fragment: '책상 앞에 앉아 공부를 했다',
+        variants: [
+          { label: '집중해서 몰두', fragment: '집중해서 공부에 몰두했다' },
+          { label: '실력이 느는 걸 느낌', fragment: '조금씩 실력이 느는 게 느껴졌다' },
+        ],
+      },
+      {
+        id: 'a13',
+        label: '글쓰기',
+        emoji: '✍️',
+        fragment: '생각을 글로 옮겨 적었다',
+        variants: [
+          { label: '마음을 담아', fragment: '마음을 담아 글을 써 내려갔다' },
+          { label: '생각이 정리됨', fragment: '쓰다 보니 생각이 정리됐다' },
+        ],
+      },
+      {
+        id: 'a14',
+        label: '노래 부르기',
+        emoji: '🎤',
+        fragment: '신나게 노래를 불렀다',
+        variants: [
+          { label: '목이 쉬도록', fragment: '목이 쉬도록 노래를 불렀다' },
+          { label: '스트레스가 날아감', fragment: '노래 한 곡에 스트레스가 날아갔다' },
+        ],
+      },
+      {
+        id: 'a15',
+        label: '반려식물 돌보기',
+        emoji: '🪴',
+        fragment: '화분에 물을 주며 식물을 돌봤다',
+        variants: [
+          { label: '새순을 발견', fragment: '새순이 돋은 걸 발견했다' },
+          { label: '마음이 차분해짐', fragment: '식물을 돌보며 마음이 차분해졌다' },
+        ],
+      },
+      {
+        id: 'a16',
+        label: '쇼핑',
+        emoji: '🛍️',
+        fragment: '필요한 물건들을 쇼핑했다',
+        variants: [
+          { label: '마음에 드는 물건', fragment: '마음에 드는 물건을 발견했다' },
+          { label: '충동구매', fragment: '충동구매를 하고 살짝 후회했다' },
+        ],
+      },
     ],
   },
   {
@@ -528,6 +936,86 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '멍때리기', fragment: '아무 생각 없이 멍하니 있었다' },
           { label: '나를 위한 시간', fragment: '온전히 나를 위한 시간을 보냈다' },
+        ],
+      },
+      {
+        id: 'mo9',
+        label: '칭찬 한마디',
+        emoji: '💐',
+        fragment: '뜻밖의 칭찬 한마디에 기분이 좋아졌다',
+        variants: [
+          { label: '생각지도 못한 칭찬', fragment: '생각지도 못한 칭찬을 받았다' },
+          { label: '오래 남은 한마디', fragment: '그 말 한마디가 오래 남았다' },
+        ],
+      },
+      {
+        id: 'mo10',
+        label: '눈물 나는 순간',
+        emoji: '😢',
+        fragment: '울컥해서 눈물이 났다',
+        variants: [
+          { label: '감정이 북받침', fragment: '감정이 북받쳐 올랐다' },
+          { label: '울고 나니 후련함', fragment: '울고 나니 마음이 후련해졌다' },
+        ],
+      },
+      {
+        id: 'mo11',
+        label: '웃음 터진 순간',
+        emoji: '🤣',
+        fragment: '웃음이 빵 터지는 순간이 있었다',
+        variants: [
+          { label: '배꼽 잡고 웃음', fragment: '배꼽 잡고 웃었다' },
+          { label: '오랜만에 실컷', fragment: '오랜만에 실컷 웃었다' },
+        ],
+      },
+      {
+        id: 'mo12',
+        label: '좋은 소식',
+        emoji: '📰',
+        fragment: '반가운 소식을 들었다',
+        variants: [
+          { label: '기다리던 소식', fragment: '기다리던 소식이 도착했다' },
+          { label: '하루 종일 기분 좋음', fragment: '덕분에 하루 종일 기분이 좋았다' },
+        ],
+      },
+      {
+        id: 'mo13',
+        label: '아쉬운 이별',
+        emoji: '👋',
+        fragment: '아쉬운 작별의 순간이 있었다',
+        variants: [
+          { label: '못내 아쉬움', fragment: '헤어짐이 못내 아쉬웠다' },
+          { label: '다음을 기약함', fragment: '다음을 기약하며 인사했다' },
+        ],
+      },
+      {
+        id: 'mo14',
+        label: '뜻깊은 대화',
+        emoji: '💭',
+        fragment: '마음에 오래 남을 대화를 나눴다',
+        variants: [
+          { label: '생각이 많아짐', fragment: '생각이 많아지는 대화였다' },
+          { label: '마음을 확인함', fragment: '서로의 마음을 확인한 시간이었다' },
+        ],
+      },
+      {
+        id: 'mo15',
+        label: '날씨 덕 본 순간',
+        emoji: '🌤️',
+        fragment: '날씨 덕분에 기분 좋은 하루였다',
+        variants: [
+          { label: '날씨가 기분을 맑게 함', fragment: '날씨가 기분까지 맑게 해줬다' },
+          { label: '절로 기분 좋아짐', fragment: '화창한 날씨에 절로 기분이 좋아졌다' },
+        ],
+      },
+      {
+        id: 'mo16',
+        label: '작은 사치',
+        emoji: '🍰',
+        fragment: '나를 위한 작은 사치를 부렸다',
+        variants: [
+          { label: '나에게 주는 선물', fragment: '나에게 작은 선물을 했다' },
+          { label: '가끔은 필요한 여유', fragment: '가끔은 이런 여유도 필요했다' },
         ],
       },
     ],
