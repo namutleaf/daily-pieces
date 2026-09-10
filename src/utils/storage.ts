@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { composeDiaryText } from './generateDiary';
-import { DiaryEntry, LineKey, PaletteKey } from '../types';
+import { DiaryEntry, LineKey, PaletteKey, ToneKey } from '../types';
 import { FontKey } from '../data/fonts';
 
 const KEY = 'daily_pieces_entries_v1';
@@ -51,6 +51,26 @@ export async function updateLineOverrides(
       e.personName
     );
     updated = { ...e, lineOverrides, diaryText };
+    return updated;
+  });
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+  return updated;
+}
+
+// Used once, right when a diary is created: the user's own typed sentence
+// sets the tone for the whole entry, and is appended as its own line.
+export async function applyCustomLineAndTone(
+  id: string,
+  tone: ToneKey,
+  customText: string
+): Promise<DiaryEntry | null> {
+  const entries = await loadEntries();
+  let updated: DiaryEntry | null = null;
+  const next = entries.map((e) => {
+    if (e.id !== id) return e;
+    const lineOverrides = { ...e.lineOverrides, custom: customText };
+    const diaryText = composeDiaryText(e.selections, lineOverrides, e.closerFragment, tone, e.personName);
+    updated = { ...e, tone, lineOverrides, diaryText };
     return updated;
   });
   await AsyncStorage.setItem(KEY, JSON.stringify(next));

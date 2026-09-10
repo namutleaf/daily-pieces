@@ -11,7 +11,8 @@ import ProgressDots from '../components/ProgressDots';
 import MoodMessageModal from '../components/MoodMessageModal';
 import { buildDiaryEntry } from '../utils/generateDiary';
 import { pickMoodMessage } from '../data/moodMessages';
-import { getLastName, saveEntry, setLastName } from '../utils/storage';
+import { detectToneFromText } from '../utils/detectTone';
+import { applyCustomLineAndTone, getLastName, saveEntry, setLastName } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
 
@@ -28,6 +29,7 @@ export default function CardSelectScreen({ navigation, route }: Props) {
   const [pendingEntry, setPendingEntry] = useState<DiaryEntry | null>(null);
   const [moodMessage, setMoodMessage] = useState('');
   const [setIndex, setSetIndex] = useState(0);
+  const [customInput, setCustomInput] = useState('');
 
   const category = CATEGORIES[roundIndex];
   const isLastRound = roundIndex === CATEGORIES.length - 1;
@@ -56,6 +58,7 @@ export default function CardSelectScreen({ navigation, route }: Props) {
           const entry = buildDiaryEntry(nextSelections, tone, effectivePersonName);
           await saveEntry(entry);
           setMoodMessage(pickMoodMessage(entry.paletteKey));
+          setCustomInput('');
           setPendingEntry(entry);
           setBusy(false);
         } else {
@@ -101,9 +104,16 @@ export default function CardSelectScreen({ navigation, route }: Props) {
     }
   };
 
-  const handleContinueToResult = () => {
+  const handleContinueToResult = async () => {
     if (!pendingEntry) return;
-    navigation.replace('Result', { entry: pendingEntry });
+    const trimmed = customInput.trim();
+    if (!trimmed) {
+      navigation.replace('Result', { entry: pendingEntry });
+      return;
+    }
+    const tone = detectToneFromText(trimmed);
+    const updated = await applyCustomLineAndTone(pendingEntry.id, tone, trimmed);
+    navigation.replace('Result', { entry: updated ?? pendingEntry });
   };
 
   const handleBack = () => {
@@ -201,6 +211,8 @@ export default function CardSelectScreen({ navigation, route }: Props) {
           visible={pendingEntry !== null}
           paletteKey={pendingEntry.paletteKey}
           message={moodMessage}
+          customText={customInput}
+          onChangeCustomText={setCustomInput}
           onContinue={handleContinueToResult}
         />
       )}

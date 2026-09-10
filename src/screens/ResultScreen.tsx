@@ -65,7 +65,9 @@ export default function ResultScreen({ route, navigation }: Props) {
 
   const handleSaveEdit = async () => {
     const patch: Partial<Record<LineKey, string>> = {};
-    ALL_LINE_KEYS.forEach((key) => {
+    const keysToCheck: LineKey[] =
+      entry.lineOverrides.custom !== undefined ? [...ALL_LINE_KEYS, 'custom'] : ALL_LINE_KEYS;
+    keysToCheck.forEach((key) => {
       const draft = draftLines[key];
       if (draft !== undefined && draft.trim() !== getCurrentFinalText(key)) {
         patch[key] = draft.trim();
@@ -80,6 +82,7 @@ export default function ResultScreen({ route, navigation }: Props) {
 
   const getOptions = (key: LineKey): Option[] => {
     if (key === 'closer') return CLOSER_OPTIONS;
+    if (key === 'custom') return [];
     const word = entry.selections[key];
     const defaultFragment = defaultBaseFragment(entry.selections, key, entry.personName);
     return [{ label: word.label, fragment: defaultFragment }, ...(word.variants ?? [])];

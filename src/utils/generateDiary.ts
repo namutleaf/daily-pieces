@@ -53,6 +53,7 @@ export function lineFinalText(
 ): string {
   if (lineOverrides[key] !== undefined) return lineOverrides[key]!;
   if (key === 'closer') return applyTone(closerFragment, tone);
+  if (key === 'custom') return '';
   return applyTone(defaultBaseFragment(selections, key, personName), tone);
 }
 
@@ -67,7 +68,11 @@ export function composeDiaryText(
     lineFinalText(selections, c.key, lineOverrides, closerFragment, tone, personName)
   );
   const closerLine = lineFinalText(selections, 'closer', lineOverrides, closerFragment, tone, personName);
-  return [...lines, '', closerLine].join('\n');
+  const parts = [...lines, '', closerLine];
+  if (lineOverrides.custom) {
+    parts.push('', lineOverrides.custom);
+  }
+  return parts.join('\n');
 }
 
 export function buildDiaryEntry(

@@ -58,6 +58,8 @@ const DiaryCard = forwardRef<View, Props>(
 
     const currentText = (key: LineKey) =>
       lineFinalText(entry.selections, key, entry.lineOverrides, entry.closerFragment, entry.tone, entry.personName);
+    const hasCustomLine = entry.lineOverrides.custom !== undefined;
+    const editLineKeys = hasCustomLine ? [...ALL_LINE_KEYS, 'custom' as LineKey] : ALL_LINE_KEYS;
 
     return (
       <View ref={ref} collapsable={false} style={editing ? styles.wrapperEditing : styles.wrapper}>
@@ -81,8 +83,8 @@ const DiaryCard = forwardRef<View, Props>(
           <View style={editing ? styles.bodyWrapEditing : styles.bodyWrap}>
             {editing ? (
               <View>
-                {ALL_LINE_KEYS.map((key, i) => (
-                  <View key={key} style={i === ALL_LINE_KEYS.length - 1 && styles.closerSpacer}>
+                {editLineKeys.map((key) => (
+                  <View key={key} style={(key === 'closer' || key === 'custom') && styles.closerSpacer}>
                     <LineInput
                       value={draftLines?.[key] ?? currentText(key)}
                       onChangeText={(t) => onChangeLine?.(key, t)}
@@ -117,6 +119,11 @@ const DiaryCard = forwardRef<View, Props>(
                 >
                   <Text style={[...textStyle, { color: palette.text }]}>{currentText('closer')}</Text>
                 </Pressable>
+                {hasCustomLine && (
+                  <View style={styles.closerSpacer}>
+                    <Text style={[...textStyle, { color: palette.text }]}>{currentText('custom')}</Text>
+                  </View>
+                )}
               </View>
             )}
           </View>

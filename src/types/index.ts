@@ -42,7 +42,9 @@ export type PaletteKey =
   | '살짝 우울'
   | '두근두근';
 
-export type LineKey = CategoryKey | 'closer';
+// 'custom' is the optional free-typed sentence the user can add when the
+// diary is created; it only exists when lineOverrides.custom is set.
+export type LineKey = CategoryKey | 'closer' | 'custom';
 
 export type DiaryEntry = {
   id: string;
