@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { WordItem } from '../types';
 import { theme } from '../theme';
@@ -72,21 +72,19 @@ export default function WordCard({ word, selected, disabled, onPress }: Props) {
       style={styles.touchArea}
     >
       <Animated.View
-        style={[
-          styles.card,
-          selected && styles.cardSelected,
-          { transform: [{ translateY }, { rotate }, { scale: pressAnim }] },
-        ]}
+        style={[styles.shadowLayer, { transform: [{ translateY }, { rotate }, { scale: pressAnim }] }]}
       >
-        <LinearGradient
-          colors={['rgba(255,255,255,0.65)', 'rgba(255,255,255,0)']}
-          start={{ x: 0.15, y: 0.05 }}
-          end={{ x: 0.7, y: 0.7 }}
-          style={styles.shine}
-          pointerEvents="none"
-        />
-        <Text style={styles.emoji}>{word.emoji}</Text>
-        <Text style={styles.label}>{word.label}</Text>
+        <View style={[styles.card, selected && styles.cardSelected]}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0.65)', 'rgba(255,255,255,0)']}
+            start={{ x: 0.15, y: 0.05 }}
+            end={{ x: 0.7, y: 0.7 }}
+            style={styles.shine}
+            pointerEvents="none"
+          />
+          <Text style={styles.emoji}>{word.emoji}</Text>
+          <Text style={styles.label}>{word.label}</Text>
+        </View>
       </Animated.View>
     </Pressable>
   );
@@ -98,6 +96,20 @@ const styles = StyleSheet.create({
     aspectRatio: 1.1,
     marginBottom: 22,
   },
+  // Shadow/elevation lives on this outer layer, which never clips its
+  // content — combining `overflow: hidden` with Android's `elevation` on
+  // the same view is a known source of clipping glitches, which is what
+  // this split avoids.
+  shadowLayer: {
+    flex: 1,
+    borderRadius: 18,
+    backgroundColor: theme.surface,
+    shadowColor: '#7A6A55',
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 6,
+  },
   card: {
     flex: 1,
     backgroundColor: theme.surface,
@@ -107,11 +119,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    shadowColor: '#7A6A55',
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 7 },
-    elevation: 6,
   },
   cardSelected: {
     borderColor: theme.accent,
