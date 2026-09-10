@@ -1,14 +1,16 @@
 import { PaletteKey } from './types';
 
 export const theme = {
-  bg: '#FAF6ED',
+  bg: '#F6F8FC',
   surface: '#FFFFFF',
-  ink: '#2E2A26',
-  inkSoft: '#7A7469',
-  accent: '#D97757',
-  accentSoft: '#F3D9C6',
-  sage: '#7C9885',
-  border: '#EAE2D3',
+  ink: '#152342',
+  inkSoft: '#5C6B85',
+  accent: '#2F5FE0',
+  accentSoft: '#DEE8FF',
+  sage: '#5B8DEF',
+  border: '#E2E8F5',
+  cardBg: '#EAF1FE',
+  cardBorder: '#C9DBFA',
 };
 
 export type MoodPalette = {
