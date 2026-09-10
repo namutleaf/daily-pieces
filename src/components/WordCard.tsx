@@ -20,7 +20,7 @@ export default function WordCard({ word, selected, disabled, onPress }: Props) {
   const { duration, driftY, tilt, delay } = useMemo(
     () => ({
       duration: 2200 + Math.random() * 1600,
-      driftY: 5 + Math.random() * 4,
+      driftY: 3 + Math.random() * 2.5,
       tilt: 2 + Math.random() * 2.5,
       delay: Math.random() * 500,
     }),
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   touchArea: {
     width: '22%',
     aspectRatio: 1.1,
-    marginBottom: 14,
+    marginBottom: 22,
   },
   card: {
     flex: 1,
