@@ -263,7 +263,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingBottom: 24,
+    paddingTop: 16,
+    paddingBottom: 28,
   },
   backdrop: {
     flex: 1,
