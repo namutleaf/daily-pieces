@@ -17,10 +17,12 @@ function pickRandom<T>(list: T[]): T {
 }
 
 export function applyTone(baseFragment: string, tone: ToneKey): string {
-  const sentence = `${baseFragment}.`;
-  if (tone === 'polite') return `${baseFragment.slice(0, -1)}어요.`;
-  if (tone === 'sns') return `${baseFragment.slice(0, -1)}음.`;
-  return sentence;
+  const stem = baseFragment.slice(0, -1);
+  if (tone === 'polite') return `${stem}어요.`;
+  if (tone === 'sns') return `${stem}음.`;
+  if (tone === 'letter') return `${stem}답니다.`;
+  if (tone === 'cute') return `${stem}당.`;
+  return `${baseFragment}.`;
 }
 
 export function formatDateLabel(date: Date): string {

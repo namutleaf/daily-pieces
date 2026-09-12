@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -22,21 +22,23 @@ export default function ToneSelectScreen({ navigation }: Props) {
         <Text style={styles.question}>오늘 일기는 어떤 말투로 써볼까요?</Text>
       </View>
 
-      <View style={styles.list}>
+      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {TONE_OPTIONS.map((tone) => (
           <Pressable
             key={tone.key}
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
             onPress={() => navigation.navigate('CardSelect', { tone: tone.key })}
           >
-            <Text style={styles.emoji}>{tone.emoji}</Text>
+            <View style={styles.emojiBadge}>
+              <Text style={styles.emoji}>{tone.emoji}</Text>
+            </View>
             <View style={styles.cardText}>
               <Text style={styles.label}>{tone.label}</Text>
               <Text style={styles.sample}>{tone.sample}</Text>
             </View>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -75,22 +77,36 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 14,
+    paddingBottom: 24,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.surface,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: theme.border,
-    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(47,95,224,0.10)',
+    padding: 16,
     gap: 14,
+    shadowColor: '#2B4C86',
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
   },
   cardPressed: {
     opacity: 0.7,
   },
+  emojiBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: theme.cardBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emoji: {
-    fontSize: 30,
+    fontSize: 24,
   },
   cardText: {
     flex: 1,

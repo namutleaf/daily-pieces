@@ -30,7 +30,7 @@ export type Category = {
 
 export type Selections = Record<CategoryKey, WordItem>;
 
-export type ToneKey = 'plain' | 'polite' | 'sns';
+export type ToneKey = 'plain' | 'polite' | 'sns' | 'letter' | 'cute';
 
 export type PaletteKey =
   | '설렘'
