@@ -1,5 +1,5 @@
 import React, { forwardRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CATEGORIES } from '../data/words';
 import { DiaryEntry, LineKey } from '../types';
@@ -52,7 +52,13 @@ function LineInput({
 
 const DiaryCard = forwardRef<View, Props>(
   ({ entry, editing, draftLines, onChangeLine, onPressLine, onLongPressCard, large, fontFamily }, ref) => {
-    const palette = MOOD_PALETTES[entry.paletteOverride ?? entry.paletteKey] ?? DEFAULT_PALETTE;
+    const hasPhoto = !!entry.backgroundImageUri;
+    const moodPalette = MOOD_PALETTES[entry.paletteOverride ?? entry.paletteKey] ?? DEFAULT_PALETTE;
+    // A photo background needs its own high-contrast text colors instead of
+    // the mood palette's, since the mood colors assume they're the backdrop.
+    const palette = hasPhoto
+      ? { colors: moodPalette.colors, text: '#FFFFFF', subtext: 'rgba(255,255,255,0.8)' }
+      : moodPalette;
     const fontStyle = fontFamily ? { fontFamily, fontWeight: 'normal' as const } : null;
     const textStyle = [styles.diaryText, large && styles.diaryTextLarge, fontStyle];
 
@@ -63,12 +69,23 @@ const DiaryCard = forwardRef<View, Props>(
 
     return (
       <View ref={ref} collapsable={false} style={editing ? styles.wrapperEditing : styles.wrapper}>
-        <LinearGradient
-          colors={palette.colors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
+        {hasPhoto ? (
+          <>
+            <Image
+              source={{ uri: entry.backgroundImageUri }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+            <View style={[StyleSheet.absoluteFill, styles.photoScrim]} />
+          </>
+        ) : (
+          <LinearGradient
+            colors={palette.colors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
         <Pressable
           style={editing ? styles.cardEditing : styles.card}
           disabled={editing || !onLongPressCard}
@@ -151,6 +168,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     position: 'relative',
+  },
+  photoScrim: {
+    backgroundColor: 'rgba(0,0,0,0.38)',
   },
   wrapperEditing: {
     width: '100%',

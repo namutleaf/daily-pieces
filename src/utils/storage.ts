@@ -92,6 +92,21 @@ export async function updatePaletteOverride(
   return updated;
 }
 
+export async function updateBackgroundImage(
+  id: string,
+  backgroundImageUri: string | undefined
+): Promise<DiaryEntry | null> {
+  const entries = await loadEntries();
+  let updated: DiaryEntry | null = null;
+  const next = entries.map((e) => {
+    if (e.id !== id) return e;
+    updated = { ...e, backgroundImageUri };
+    return updated;
+  });
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+  return updated;
+}
+
 export async function getFontPreference(): Promise<FontKey> {
   try {
     const raw = await AsyncStorage.getItem(FONT_KEY);

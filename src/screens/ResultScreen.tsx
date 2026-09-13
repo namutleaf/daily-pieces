@@ -13,6 +13,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { captureRef } from 'react-native-view-shot';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
+import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../navigation/types';
 import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
 import DiaryCard from '../components/DiaryCard';
@@ -22,6 +23,7 @@ import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '.
 import {
   getFontPreference,
   removeEntry,
+  updateBackgroundImage,
   updateLineOverrides,
   updatePaletteOverride,
 } from '../utils/storage';
@@ -50,6 +52,30 @@ export default function ResultScreen({ route, navigation }: Props) {
   const handlePickPalette = async (key: PaletteKey | undefined) => {
     setBgPickerOpen(false);
     const updated = await updatePaletteOverride(entry.id, key);
+    if (!updated) return;
+    // A photo takes visual priority over the mood color, so clear it when
+    // the user explicitly picks a color instead.
+    const cleared = updated.backgroundImageUri
+      ? await updateBackgroundImage(entry.id, undefined)
+      : updated;
+    setEntry(cleared ?? updated);
+  };
+
+  const handlePickPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('권한이 필요해요', '사진 보관함 접근을 허용해주세요.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [4, 5],
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    setBgPickerOpen(false);
+    const updated = await updateBackgroundImage(entry.id, result.assets[0].uri);
     if (updated) setEntry(updated);
   };
 
@@ -336,16 +362,30 @@ export default function ResultScreen({ route, navigation }: Props) {
             <View style={styles.swatchGrid}>
               <Pressable
                 style={({ pressed }) => [styles.swatchItem, pressed && styles.sheetOptionPressed]}
+                onPress={handlePickPhoto}
+              >
+                <View style={[styles.swatchAuto, !!entry.backgroundImageUri && styles.swatchActive]}>
+                  <Text style={styles.swatchAutoText}>🖼️</Text>
+                </View>
+                <Text style={styles.swatchLabel}>내 사진</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.swatchItem, pressed && styles.sheetOptionPressed]}
                 onPress={() => handlePickPalette(undefined)}
               >
-                <View style={[styles.swatchAuto, !entry.paletteOverride && styles.swatchActive]}>
+                <View
+                  style={[
+                    styles.swatchAuto,
+                    !entry.paletteOverride && !entry.backgroundImageUri && styles.swatchActive,
+                  ]}
+                >
                   <Text style={styles.swatchAutoText}>기본</Text>
                 </View>
                 <Text style={styles.swatchLabel}>기분대로</Text>
               </Pressable>
               {PALETTE_KEYS.map((key) => {
                 const palette = MOOD_PALETTES[key];
-                const isActive = entry.paletteOverride === key;
+                const isActive = entry.paletteOverride === key && !entry.backgroundImageUri;
                 return (
                   <Pressable
                     key={key}

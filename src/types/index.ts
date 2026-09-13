@@ -64,4 +64,7 @@ export type DiaryEntry = {
   // User-chosen background (via long-press on the card), overriding the
   // mood-derived paletteKey. Undefined means "use the mood's own color."
   paletteOverride?: PaletteKey;
+  // A user-picked photo used as the card background instead of the mood
+  // gradient. Takes priority over paletteOverride/paletteKey when set.
+  backgroundImageUri?: string;
 };
