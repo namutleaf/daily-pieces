@@ -67,4 +67,7 @@ export type DiaryEntry = {
   // A user-picked photo used as the card background instead of the mood
   // gradient. Takes priority over paletteOverride/paletteKey when set.
   backgroundImageUri?: string;
+  // Ids of decorative stickers (from src/data/stickers.ts) attached to the
+  // card, in the order they were added.
+  stickers?: string[];
 };

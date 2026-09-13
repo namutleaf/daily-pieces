@@ -2,11 +2,17 @@ import React, { forwardRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CATEGORIES } from '../data/words';
+import { findStickerById } from '../data/stickers';
 import { DiaryEntry, LineKey } from '../types';
 import { MOOD_PALETTES, DEFAULT_PALETTE } from '../theme';
 import { lineFinalText } from '../utils/generateDiary';
 
 const ALL_LINE_KEYS: LineKey[] = [...CATEGORIES.map((c) => c.key), 'closer'];
+
+// A slight alternating tilt so a row of stickers reads as hand-placed
+// rather than machine-aligned, without needing absolute positioning that
+// could overlap the diary text (which varies a lot in length).
+const STICKER_TILTS = ['-8deg', '6deg', '-4deg', '9deg'];
 
 type Props = {
   entry: DiaryEntry;
@@ -96,6 +102,23 @@ const DiaryCard = forwardRef<View, Props>(
             <Text style={[styles.brand, { color: palette.text }]}>Daily Pieces</Text>
             <Text style={[styles.date, { color: palette.subtext }]}>{entry.dateLabel}</Text>
           </View>
+
+          {!!entry.stickers?.length && (
+            <View style={styles.stickerRow}>
+              {entry.stickers.map((id, i) => {
+                const sticker = findStickerById(id);
+                if (!sticker) return null;
+                return (
+                  <Text
+                    key={`${id}-${i}`}
+                    style={[styles.stickerEmoji, { transform: [{ rotate: STICKER_TILTS[i % STICKER_TILTS.length] }] }]}
+                  >
+                    {sticker.emoji}
+                  </Text>
+                );
+              })}
+            </View>
+          )}
 
           <View style={editing ? styles.bodyWrapEditing : styles.bodyWrap}>
             {editing ? (
@@ -241,5 +264,17 @@ const styles = StyleSheet.create({
   tag: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  stickerRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 10,
+  },
+  stickerEmoji: {
+    fontSize: 24,
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowRadius: 3,
+    textShadowOffset: { width: 0, height: 1 },
   },
 });

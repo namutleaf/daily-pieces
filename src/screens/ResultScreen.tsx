@@ -19,6 +19,7 @@ import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
 import DiaryCard from '../components/DiaryCard';
 import { LineKey, PaletteKey } from '../types';
 import { getFontOption } from '../data/fonts';
+import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS } from '../data/stickers';
 import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '../utils/generateDiary';
 import {
   getFontPreference,
@@ -26,6 +27,7 @@ import {
   updateBackgroundImage,
   updateLineOverrides,
   updatePaletteOverride,
+  updateStickers,
 } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
@@ -43,6 +45,7 @@ export default function ResultScreen({ route, navigation }: Props) {
   const [pickerKey, setPickerKey] = useState<LineKey | null>(null);
   const [pendingSwap, setPendingSwap] = useState<{ key: LineKey; option: Option } | null>(null);
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
+  const [stickerSheetOpen, setStickerSheetOpen] = useState(false);
   const [fontFamily, setFontFamily] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -76,6 +79,25 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (result.canceled || !result.assets?.[0]) return;
     setBgPickerOpen(false);
     const updated = await updateBackgroundImage(entry.id, result.assets[0].uri);
+    if (updated) setEntry(updated);
+  };
+
+  const handleToggleSticker = async (id: string, free: boolean) => {
+    if (!free) {
+      Alert.alert('조금만 기다려주세요', '곧 새로운 스티커로 만나요 💌');
+      return;
+    }
+    const current = entry.stickers ?? [];
+    let next: string[];
+    if (current.includes(id)) {
+      next = current.filter((s) => s !== id);
+    } else if (current.length >= MAX_STICKERS_PER_ENTRY) {
+      Alert.alert('스티커는 최대 4개까지', '카드 하나에 최대 4개까지 붙일 수 있어요.');
+      return;
+    } else {
+      next = [...current, id];
+    }
+    const updated = await updateStickers(entry.id, next);
     if (updated) setEntry(updated);
   };
 
@@ -207,6 +229,13 @@ export default function ResultScreen({ route, navigation }: Props) {
             onPress={handleOpenEdit}
           >
             <Text style={styles.secondaryBtnText}>직접 수정하기</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
+            onPress={() => setStickerSheetOpen(true)}
+          >
+            <Text style={styles.secondaryBtnText}>스티커 꾸미기</Text>
           </Pressable>
 
           <Pressable
@@ -405,6 +434,48 @@ export default function ResultScreen({ route, navigation }: Props) {
               })}
             </View>
           </View>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={stickerSheetOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setStickerSheetOpen(false)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setStickerSheetOpen(false)}>
+          <ScrollView style={styles.stickerSheet} contentContainerStyle={styles.stickerSheetContent}>
+            <Text style={styles.sheetTitle}>스티커로 꾸며보세요</Text>
+            <Text style={styles.stickerHint}>최대 {MAX_STICKERS_PER_ENTRY}개까지 붙일 수 있어요</Text>
+            {STICKER_PACKS.map((pack) => (
+              <View key={pack.id} style={styles.stickerPack}>
+                <View style={styles.stickerPackHeader}>
+                  <Text style={styles.stickerPackTitle}>{pack.title}</Text>
+                  {!pack.free && <Text style={styles.stickerPackSoon}>Soon</Text>}
+                </View>
+                <View style={styles.stickerGrid}>
+                  {pack.stickers.map((sticker) => {
+                    const isActive = (entry.stickers ?? []).includes(sticker.id);
+                    return (
+                      <Pressable
+                        key={sticker.id}
+                        style={({ pressed }) => [
+                          styles.stickerItem,
+                          isActive && styles.stickerItemActive,
+                          !pack.free && styles.stickerItemLocked,
+                          pressed && styles.sheetOptionPressed,
+                        ]}
+                        onPress={() => handleToggleSticker(sticker.id, pack.free)}
+                      >
+                        <Text style={styles.stickerItemEmoji}>{sticker.emoji}</Text>
+                        <Text style={styles.stickerItemLabel}>{sticker.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
+          </ScrollView>
         </Pressable>
       </Modal>
     </SafeAreaView>
@@ -650,5 +721,75 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.inkSoft,
     textAlign: 'center',
+  },
+  stickerSheet: {
+    maxHeight: '75%',
+    backgroundColor: theme.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  stickerSheetContent: {
+    padding: 20,
+    paddingBottom: 32,
+  },
+  stickerHint: {
+    fontSize: 12,
+    color: theme.inkSoft,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  stickerPack: {
+    marginBottom: 18,
+  },
+  stickerPackHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  stickerPackTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.ink,
+  },
+  stickerPackSoon: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: theme.inkSoft,
+    backgroundColor: theme.bg,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    overflow: 'hidden',
+  },
+  stickerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  stickerItem: {
+    width: 68,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: theme.bg,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  stickerItemActive: {
+    borderColor: theme.accent,
+    backgroundColor: theme.accentSoft,
+  },
+  stickerItemLocked: {
+    opacity: 0.45,
+  },
+  stickerItemEmoji: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  stickerItemLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.inkSoft,
   },
 });

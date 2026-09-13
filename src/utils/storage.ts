@@ -107,6 +107,18 @@ export async function updateBackgroundImage(
   return updated;
 }
 
+export async function updateStickers(id: string, stickers: string[]): Promise<DiaryEntry | null> {
+  const entries = await loadEntries();
+  let updated: DiaryEntry | null = null;
+  const next = entries.map((e) => {
+    if (e.id !== id) return e;
+    updated = { ...e, stickers };
+    return updated;
+  });
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+  return updated;
+}
+
 export async function getFontPreference(): Promise<FontKey> {
   try {
     const raw = await AsyncStorage.getItem(FONT_KEY);
