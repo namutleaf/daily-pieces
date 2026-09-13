@@ -7,4 +7,6 @@ export type RootStackParamList = {
   Result: { entry: DiaryEntry; fromHistory?: boolean };
   History: undefined;
   FontSettings: undefined;
+  Stats: undefined;
+  Settings: undefined;
 };

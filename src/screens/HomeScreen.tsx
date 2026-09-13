@@ -1,22 +1,40 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
+import { loadEntries } from '../utils/storage';
+import { computeStreak } from '../utils/stats';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
+  const [streak, setStreak] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadEntries().then((entries) => setStreak(computeStreak(entries)));
+    }, [])
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
         <Pressable
           style={({ pressed }) => pressed && styles.pressed}
-          onPress={() => navigation.navigate('FontSettings')}
+          onPress={() => navigation.navigate('Stats')}
           hitSlop={12}
         >
-          <Text style={styles.settingsText}>⚙️ 글꼴 설정</Text>
+          <Text style={styles.settingsText}>📊 통계</Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => pressed && styles.pressed}
+          onPress={() => navigation.navigate('Settings')}
+          hitSlop={12}
+        >
+          <Text style={styles.settingsText}>⚙️ 설정</Text>
         </Pressable>
       </View>
 
@@ -26,6 +44,11 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>
           카드를 하나씩 고르면{'\n'}짧은 일기가 완성돼요
         </Text>
+        {streak > 0 && (
+          <View style={styles.streakBadge}>
+            <Text style={styles.streakText}>🔥 {streak}일 연속 기록 중</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.actions}>
@@ -56,7 +79,9 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   topBar: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 20,
   },
   settingsText: {
     fontSize: 13,
@@ -84,6 +109,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.inkSoft,
     lineHeight: 24,
+  },
+  streakBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: theme.accentSoft,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginTop: 20,
+  },
+  streakText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.accent,
   },
   actions: {
     gap: 12,
