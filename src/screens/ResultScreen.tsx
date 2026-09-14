@@ -17,7 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../navigation/types';
 import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
 import DiaryCard from '../components/DiaryCard';
-import { LineKey, PaletteKey, PlacedSticker } from '../types';
+import { DiaryEntry, LineKey, PaletteKey, PlacedSticker } from '../types';
 import { getFontOption } from '../data/fonts';
 import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS, StickerItem, StickerPack, isStickerUnlocked } from '../data/stickers';
 import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '../utils/generateDiary';
@@ -31,7 +31,14 @@ import {
   updatePaletteOverride,
   updateStickers,
   updateEntryLock,
+  updateTextAlign,
 } from '../utils/storage';
+
+const ALIGN_OPTIONS: { value: NonNullable<DiaryEntry['textAlign']>; label: string }[] = [
+  { value: 'left', label: '왼쪽' },
+  { value: 'center', label: '가운데' },
+  { value: 'right', label: '오른쪽' },
+];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 type Option = { label: string; fragment: string };
@@ -185,6 +192,11 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (updated) setEntry(updated);
   };
 
+  const handleSetAlign = async (align: DiaryEntry['textAlign']) => {
+    const updated = await updateTextAlign(entry.id, align);
+    if (updated) setEntry(updated);
+  };
+
   const getCurrentFinalText = (key: LineKey) =>
     lineFinalText(entry.selections, key, entry.lineOverrides, entry.closerFragment, entry.tone, entry.personName);
 
@@ -318,30 +330,50 @@ export default function ResultScreen({ route, navigation }: Props) {
           </View>
         )}
 
-        <View style={styles.actions}>
+        <View style={styles.toolRow}>
           <Pressable
-            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.toolBtn, pressed && styles.pressed]}
             onPress={handleOpenEdit}
           >
-            <Text style={styles.secondaryBtnText}>직접 수정하기</Text>
+            <Text style={styles.toolBtnIcon}>✏️</Text>
+            <Text style={styles.toolBtnLabel}>수정</Text>
           </Pressable>
 
           <Pressable
-            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.toolBtn, pressed && styles.pressed]}
             onPress={() => setStickerSheetOpen(true)}
           >
-            <Text style={styles.secondaryBtnText}>스티커 꾸미기</Text>
+            <Text style={styles.toolBtnIcon}>🏷️</Text>
+            <Text style={styles.toolBtnLabel}>스티커</Text>
           </Pressable>
 
           <Pressable
-            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.toolBtn, pressed && styles.pressed]}
             onPress={handleToggleEntryLock}
           >
-            <Text style={styles.secondaryBtnText}>
-              {entry.locked ? '🔒 이 일기 잠금 해제' : '🔓 이 일기 잠그기'}
-            </Text>
+            <Text style={styles.toolBtnIcon}>{entry.locked ? '🔒' : '🔓'}</Text>
+            <Text style={styles.toolBtnLabel}>잠금</Text>
           </Pressable>
+        </View>
 
+        <View style={styles.alignRow}>
+          {ALIGN_OPTIONS.map((opt) => {
+            const active = (entry.textAlign ?? 'left') === opt.value;
+            return (
+              <Pressable
+                key={opt.value}
+                style={[styles.alignBtn, active && styles.alignBtnActive]}
+                onPress={() => handleSetAlign(opt.value)}
+              >
+                <Text style={[styles.alignBtnText, active && styles.alignBtnTextActive]}>
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.actions}>
           <Pressable
             style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
             onPress={handleShare}
@@ -357,28 +389,23 @@ export default function ResultScreen({ route, navigation }: Props) {
           >
             <Text style={styles.secondaryBtnText}>이미지 저장</Text>
           </Pressable>
+        </View>
 
-          <Pressable
-            style={({ pressed }) => [styles.textBtn, pressed && styles.pressed]}
-            onPress={() => navigation.replace('ToneSelect')}
-          >
-            <Text style={styles.textBtnText}>다시 만들기</Text>
+        <View style={styles.linkRow}>
+          <Pressable onPress={() => navigation.replace('ToneSelect')} hitSlop={8}>
+            <Text style={styles.linkText}>다시 만들기</Text>
           </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.textBtn, pressed && styles.pressed]}
-            onPress={() => navigation.popToTop()}
-          >
-            <Text style={styles.textBtnText}>홈으로</Text>
+          <Text style={styles.linkDot}>·</Text>
+          <Pressable onPress={() => navigation.popToTop()} hitSlop={8}>
+            <Text style={styles.linkText}>홈으로</Text>
           </Pressable>
-
           {fromHistory && (
-            <Pressable
-              style={({ pressed }) => [styles.textBtn, pressed && styles.pressed]}
-              onPress={handleDelete}
-            >
-              <Text style={styles.deleteText}>삭제하기</Text>
-            </Pressable>
+            <>
+              <Text style={styles.linkDot}>·</Text>
+              <Pressable onPress={handleDelete} hitSlop={8}>
+                <Text style={styles.deleteText}>삭제하기</Text>
+              </Pressable>
+            </>
           )}
         </View>
       </ScrollView>
@@ -629,8 +656,57 @@ const styles = StyleSheet.create({
     color: theme.accentSoft,
     fontWeight: '800',
   },
+  toolRow: {
+    marginTop: 16,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  toolBtn: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: theme.surface,
+    borderWidth: 1.5,
+    borderColor: theme.border,
+  },
+  toolBtnIcon: {
+    fontSize: 18,
+  },
+  toolBtnLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.inkSoft,
+  },
+  alignRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  alignBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderRadius: 10,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  alignBtnActive: {
+    backgroundColor: theme.accentSoft,
+    borderColor: theme.accent,
+  },
+  alignBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.inkSoft,
+  },
+  alignBtnTextActive: {
+    color: theme.accent,
+  },
   actions: {
-    marginTop: 24,
+    marginTop: 20,
     gap: 12,
   },
   primaryBtn: {
@@ -657,18 +733,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  textBtn: {
-    paddingVertical: 10,
+  linkRow: {
+    marginTop: 18,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: 10,
   },
-  textBtnText: {
+  linkText: {
     color: theme.inkSoft,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
+  },
+  linkDot: {
+    color: theme.border,
+    fontSize: 14,
   },
   deleteText: {
     color: '#C0392B',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
   },
   pressed: {

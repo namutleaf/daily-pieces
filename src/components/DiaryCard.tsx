@@ -86,7 +86,10 @@ const DiaryCard = forwardRef<View, Props>(
       ? { colors: moodPalette.colors, text: '#FFFFFF', subtext: 'rgba(255,255,255,0.8)' }
       : moodPalette;
     const fontStyle = fontFamily ? { fontFamily, fontWeight: 'normal' as const } : null;
-    const textStyle = [styles.diaryText, large && styles.diaryTextLarge, fontStyle];
+    const align = entry.textAlign ?? 'left';
+    const textStyle = [styles.diaryText, large && styles.diaryTextLarge, fontStyle, { textAlign: align }];
+    const tagsJustify =
+      align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
 
     const currentText = (key: LineKey) =>
       lineFinalText(entry.selections, key, entry.lineOverrides, entry.closerFragment, entry.tone, entry.personName);
@@ -176,7 +179,7 @@ const DiaryCard = forwardRef<View, Props>(
             )}
           </View>
 
-          <View style={styles.tagsRow}>
+          <View style={[styles.tagsRow, { justifyContent: tagsJustify }]}>
             {entry.hashtags.map((tag) => (
               <Text key={tag} style={[styles.tag, { color: palette.subtext }]}>
                 {tag}

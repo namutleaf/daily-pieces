@@ -73,6 +73,9 @@ export type DiaryEntry = {
   // When true, opening this entry requires biometric auth (independent of
   // the whole-app lock in Settings), for hiding a single sensitive day.
   locked?: boolean;
+  // How the diary text lines are aligned within the card. Undefined means
+  // the default ('left').
+  textAlign?: 'left' | 'center' | 'right';
 };
 
 export type PlacedSticker = {

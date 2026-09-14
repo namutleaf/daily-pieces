@@ -126,6 +126,21 @@ export async function updateBackgroundImage(
   return updated;
 }
 
+export async function updateTextAlign(
+  id: string,
+  textAlign: DiaryEntry['textAlign']
+): Promise<DiaryEntry | null> {
+  const entries = await loadEntries();
+  let updated: DiaryEntry | null = null;
+  const next = entries.map((e) => {
+    if (e.id !== id) return e;
+    updated = { ...e, textAlign };
+    return updated;
+  });
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+  return updated;
+}
+
 export async function updateStickers(id: string, stickers: PlacedSticker[]): Promise<DiaryEntry | null> {
   const entries = await loadEntries();
   let updated: DiaryEntry | null = null;
