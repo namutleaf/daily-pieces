@@ -56,9 +56,14 @@ export default function ResultScreen({ route, navigation }: Props) {
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const [stickerSheetOpen, setStickerSheetOpen] = useState(false);
   const [fontFamily, setFontFamily] = useState<string | undefined>(undefined);
+  const [deletedSticker, setDeletedSticker] = useState<PlacedSticker | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     getFontPreference().then((key) => setFontFamily(getFontOption(key).fontFamily));
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
   }, []);
 
   const handlePickPalette = async (key: PaletteKey | undefined) => {
@@ -122,6 +127,29 @@ export default function ResultScreen({ route, navigation }: Props) {
     const current = entry.stickers ?? [];
     const next = current.map((s) => (s.instanceId === instanceId ? { ...s, ...patch } : s));
     const updated = await updateStickers(entry.id, next);
+    if (updated) setEntry(updated);
+  };
+
+  const handleDeleteSticker = async (instanceId: string) => {
+    const current = entry.stickers ?? [];
+    const removed = current.find((s) => s.instanceId === instanceId);
+    if (!removed) return;
+    const next = current.filter((s) => s.instanceId !== instanceId);
+    const updated = await updateStickers(entry.id, next);
+    if (updated) setEntry(updated);
+
+    setDeletedSticker(removed);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => setDeletedSticker(null), 3000);
+  };
+
+  const handleUndoDeleteSticker = async () => {
+    if (!deletedSticker) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    const restored = deletedSticker;
+    setDeletedSticker(null);
+    const current = entry.stickers ?? [];
+    const updated = await updateStickers(entry.id, [...current, restored]);
     if (updated) setEntry(updated);
   };
 
@@ -241,12 +269,22 @@ export default function ResultScreen({ route, navigation }: Props) {
           onPressLine={(key) => setPickerKey(key)}
           onLongPressCard={() => setBgPickerOpen(true)}
           onChangeSticker={handleStickerChange}
+          onDeleteSticker={handleDeleteSticker}
           fontFamily={fontFamily}
         />
 
         <Text style={styles.hint}>
           문장을 눌러보면 다른 표현으로, 길게 누르면 배경을 바꿀 수 있어요
         </Text>
+
+        {deletedSticker && (
+          <View style={styles.undoToast}>
+            <Text style={styles.undoToastText}>스티커를 삭제했어요</Text>
+            <Pressable onPress={handleUndoDeleteSticker} hitSlop={8}>
+              <Text style={styles.undoToastAction}>되돌리기</Text>
+            </Pressable>
+          </View>
+        )}
 
         <View style={styles.actions}>
           <Pressable
@@ -473,7 +511,8 @@ export default function ResultScreen({ route, navigation }: Props) {
             <Text style={styles.sheetTitle}>스티커로 꾸며보세요</Text>
             <Text style={styles.stickerHint}>
               최대 {MAX_STICKERS_PER_ENTRY}개까지 붙일 수 있어요{'\n'}
-              카드 위 스티커는 끌어서 옮기고, 두 손가락으로 돌리거나 크기를 바꿀 수 있어요
+              카드 위 스티커는 끌어서 옮기고, 두 손가락으로 돌리거나 크기를 바꿀 수 있어요{'\n'}
+              길게 누르면 삭제돼요
             </Text>
             {STICKER_PACKS.map((pack) => (
               <View key={pack.id} style={styles.stickerPack}>
@@ -524,6 +563,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     color: theme.inkSoft,
+  },
+  undoToast: {
+    marginTop: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: theme.ink,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  undoToastText: {
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  undoToastAction: {
+    fontSize: 13,
+    color: theme.accentSoft,
+    fontWeight: '800',
   },
   actions: {
     marginTop: 24,

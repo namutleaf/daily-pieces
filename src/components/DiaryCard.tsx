@@ -22,6 +22,7 @@ type Props = {
   // (the main result view); other renders (the edit modal, the ref used
   // only to capture a share image) show them plain.
   onChangeSticker?: (instanceId: string, patch: Pick<PlacedSticker, 'x' | 'y' | 'scale' | 'rotation'>) => void;
+  onDeleteSticker?: (instanceId: string) => void;
 };
 
 function LineInput({
@@ -57,7 +58,18 @@ function LineInput({
 
 const DiaryCard = forwardRef<View, Props>(
   (
-    { entry, editing, draftLines, onChangeLine, onPressLine, onLongPressCard, large, fontFamily, onChangeSticker },
+    {
+      entry,
+      editing,
+      draftLines,
+      onChangeLine,
+      onPressLine,
+      onLongPressCard,
+      large,
+      fontFamily,
+      onChangeSticker,
+      onDeleteSticker,
+    },
     ref
   ) => {
     const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
@@ -183,6 +195,7 @@ const DiaryCard = forwardRef<View, Props>(
                 cardHeight={cardSize.height}
                 interactive={!!onChangeSticker}
                 onChange={(patch) => onChangeSticker?.(placed.instanceId, patch)}
+                onLongPressDelete={() => onDeleteSticker?.(placed.instanceId)}
               />
             ))}
           </View>

@@ -10,6 +10,7 @@ type Props = {
   cardHeight: number;
   interactive: boolean;
   onChange: (patch: Pick<PlacedSticker, 'x' | 'y' | 'scale' | 'rotation'>) => void;
+  onLongPressDelete?: () => void;
 };
 
 const BASE_SIZE = 40;
@@ -20,8 +21,16 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-export default function DraggableSticker({ placed, cardWidth, cardHeight, interactive, onChange }: Props) {
+export default function DraggableSticker({
+  placed,
+  cardWidth,
+  cardHeight,
+  interactive,
+  onChange,
+  onLongPressDelete,
+}: Props) {
   const sticker = findStickerById(placed.stickerId);
+  const [pressed, setPressed] = useState(false);
 
   // Instagram-style stickers: one finger held down keeps moving it, adding a
   // second finger pinches/rotates at the same time — no visible handles or
@@ -86,7 +95,22 @@ export default function DraggableSticker({ placed, cardWidth, cardHeight, intera
       commit();
     });
 
-  const composed = Gesture.Simultaneous(pan, pinch, rotate);
+  // A plain hold (no drag) removes the sticker — matches the "long-press
+  // to delete" pattern people already know from home-screen icons. It
+  // naturally coexists with pan/pinch/rotate: RNGH fails a long-press on
+  // its own once the touch moves past its small tolerance, so an actual
+  // drag never gets mistaken for a delete-hold.
+  const longPress = Gesture.LongPress()
+    .minDuration(450)
+    .onTouchesDown(() => setPressed(true))
+    .onTouchesUp(() => setPressed(false))
+    .onStart(() => {
+      setPressed(false);
+      onLongPressDelete?.();
+    })
+    .onFinalize(() => setPressed(false));
+
+  const composed = Gesture.Simultaneous(pan, pinch, rotate, longPress);
 
   if (!sticker || cardWidth === 0 || cardHeight === 0) return null;
 
@@ -95,6 +119,7 @@ export default function DraggableSticker({ placed, cardWidth, cardHeight, intera
     <Text
       style={[
         styles.emoji,
+        pressed && styles.emojiPressed,
         {
           left: live.x * cardWidth - size / 2,
           top: live.y * cardHeight - size / 2,
@@ -118,5 +143,8 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.15)',
     textShadowRadius: 3,
     textShadowOffset: { width: 0, height: 1 },
+  },
+  emojiPressed: {
+    opacity: 0.5,
   },
 });
