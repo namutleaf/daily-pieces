@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { RootStackParamList } from '../navigation/types';
 import { DiaryEntry } from '../types';
 import { theme } from '../theme';
 import { loadEntries } from '../utils/storage';
+import { authenticate, checkLockSupport } from '../utils/lock';
 import CalendarGrid from '../components/CalendarGrid';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'History'>;
@@ -30,16 +31,31 @@ export default function HistoryScreen({ navigation }: Props) {
   const filtered = useMemo(() => {
     const q = query.trim();
     if (!q) return entries;
-    return entries.filter(
-      (e) =>
-        e.dateLabel.includes(q) ||
-        e.diaryText.includes(q) ||
-        e.hashtags.some((tag) => tag.includes(q))
-    );
+    return entries.filter((e) => {
+      if (e.dateLabel.includes(q)) return true;
+      // A locked entry's content shouldn't be searchable — only its date.
+      if (e.locked) return false;
+      return e.diaryText.includes(q) || e.hashtags.some((tag) => tag.includes(q));
+    });
   }, [entries, query]);
 
-  const openEntry = (entry: DiaryEntry) =>
+  const openEntry = async (entry: DiaryEntry) => {
+    if (entry.locked) {
+      const support = await checkLockSupport();
+      if (!support.supported) {
+        Alert.alert(
+          '잠긴 일기예요',
+          support.reason === 'web-unsupported'
+            ? '웹 미리보기에서는 잠긴 일기를 열 수 없어요. 실제 기기에서 확인해주세요.'
+            : '이 기기에서는 지문/얼굴 인식을 사용할 수 없어요.'
+        );
+        return;
+      }
+      const success = await authenticate('잠긴 일기 열기');
+      if (!success) return;
+    }
     navigation.navigate('Result', { entry, fromHistory: true });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -102,9 +118,12 @@ export default function HistoryScreen({ navigation }: Props) {
                   style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
                   onPress={() => openEntry(item)}
                 >
-                  <Text style={styles.rowDate}>{item.dateLabel}</Text>
+                  <Text style={styles.rowDate}>
+                    {item.locked ? '🔒 ' : ''}
+                    {item.dateLabel}
+                  </Text>
                   <Text style={styles.rowTags} numberOfLines={1}>
-                    {item.hashtags.join('  ')}
+                    {item.locked ? '비공개 일기' : item.hashtags.join('  ')}
                   </Text>
                 </Pressable>
               )}

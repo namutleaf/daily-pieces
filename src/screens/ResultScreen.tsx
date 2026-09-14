@@ -19,8 +19,10 @@ import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
 import DiaryCard from '../components/DiaryCard';
 import { LineKey, PaletteKey, PlacedSticker } from '../types';
 import { getFontOption } from '../data/fonts';
-import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS } from '../data/stickers';
+import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS, StickerItem, StickerPack, isStickerUnlocked } from '../data/stickers';
 import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '../utils/generateDiary';
+import { getUnlockedMilestones } from '../utils/milestones';
+import { checkLockSupport, authenticate } from '../utils/lock';
 import {
   getFontPreference,
   removeEntry,
@@ -28,6 +30,7 @@ import {
   updateLineOverrides,
   updatePaletteOverride,
   updateStickers,
+  updateEntryLock,
 } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
@@ -58,9 +61,11 @@ export default function ResultScreen({ route, navigation }: Props) {
   const [fontFamily, setFontFamily] = useState<string | undefined>(undefined);
   const [deletedSticker, setDeletedSticker] = useState<PlacedSticker | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [unlockedMilestones, setUnlockedMilestones] = useState<number[]>([]);
 
   useEffect(() => {
     getFontPreference().then((key) => setFontFamily(getFontOption(key).fontFamily));
+    getUnlockedMilestones().then(setUnlockedMilestones);
     return () => {
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     };
@@ -96,9 +101,14 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (updated) setEntry(updated);
   };
 
-  const handleToggleSticker = async (stickerId: string, free: boolean) => {
-    if (!free) {
-      Alert.alert('조금만 기다려주세요', '곧 새로운 스티커로 만나요 💌');
+  const handleToggleSticker = async (sticker: StickerItem, pack: StickerPack) => {
+    const stickerId = sticker.id;
+    if (!isStickerUnlocked(pack, sticker, unlockedMilestones)) {
+      if (!pack.free) {
+        Alert.alert('조금만 기다려주세요', '곧 새로운 스티커로 만나요 💌');
+      } else {
+        Alert.alert('아직 잠겨있어요', `${sticker.unlockAt}일 연속 기록을 달성하면 열려요!`);
+      }
       return;
     }
     const current = entry.stickers ?? [];
@@ -150,6 +160,28 @@ export default function ResultScreen({ route, navigation }: Props) {
     setDeletedSticker(null);
     const current = entry.stickers ?? [];
     const updated = await updateStickers(entry.id, [...current, restored]);
+    if (updated) setEntry(updated);
+  };
+
+  const handleToggleEntryLock = async () => {
+    const nextLocked = !entry.locked;
+    if (nextLocked) {
+      const support = await checkLockSupport();
+      if (!support.supported) {
+        Alert.alert(
+          '잠금을 사용할 수 없어요',
+          support.reason === 'web-unsupported'
+            ? '웹 미리보기에서는 일기 잠금을 설정할 수 없어요. 실제 기기에서 확인해주세요.'
+            : support.reason === 'no-hardware'
+              ? '이 기기에는 지문/얼굴 인식 기능이 없어요.'
+              : '기기 설정에서 지문 또는 얼굴 인식을 먼저 등록해주세요.'
+        );
+        return;
+      }
+      const success = await authenticate('이 일기 잠그기');
+      if (!success) return;
+    }
+    const updated = await updateEntryLock(entry.id, nextLocked);
     if (updated) setEntry(updated);
   };
 
@@ -299,6 +331,15 @@ export default function ResultScreen({ route, navigation }: Props) {
             onPress={() => setStickerSheetOpen(true)}
           >
             <Text style={styles.secondaryBtnText}>스티커 꾸미기</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
+            onPress={handleToggleEntryLock}
+          >
+            <Text style={styles.secondaryBtnText}>
+              {entry.locked ? '🔒 이 일기 잠금 해제' : '🔓 이 일기 잠그기'}
+            </Text>
           </Pressable>
 
           <Pressable
@@ -523,19 +564,22 @@ export default function ResultScreen({ route, navigation }: Props) {
                 <View style={styles.stickerGrid}>
                   {pack.stickers.map((sticker) => {
                     const isActive = (entry.stickers ?? []).some((s) => s.stickerId === sticker.id);
+                    const unlocked = isStickerUnlocked(pack, sticker, unlockedMilestones);
                     return (
                       <Pressable
                         key={sticker.id}
                         style={({ pressed }) => [
                           styles.stickerItem,
                           isActive && styles.stickerItemActive,
-                          !pack.free && styles.stickerItemLocked,
+                          !unlocked && styles.stickerItemLocked,
                           pressed && styles.sheetOptionPressed,
                         ]}
-                        onPress={() => handleToggleSticker(sticker.id, pack.free)}
+                        onPress={() => handleToggleSticker(sticker, pack)}
                       >
                         <Text style={styles.stickerItemEmoji}>{sticker.emoji}</Text>
-                        <Text style={styles.stickerItemLabel}>{sticker.label}</Text>
+                        <Text style={styles.stickerItemLabel}>
+                          {!unlocked && sticker.unlockAt ? `🔒 ${sticker.unlockAt}일` : sticker.label}
+                        </Text>
                       </Pressable>
                     );
                   })}

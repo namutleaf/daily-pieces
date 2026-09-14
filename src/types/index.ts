@@ -70,6 +70,9 @@ export type DiaryEntry = {
   // Decorative stickers (from src/data/stickers.ts) placed freely on the
   // card, each with its own position/size/rotation.
   stickers?: PlacedSticker[];
+  // When true, opening this entry requires biometric auth (independent of
+  // the whole-app lock in Settings), for hiding a single sensitive day.
+  locked?: boolean;
 };
 
 export type PlacedSticker = {

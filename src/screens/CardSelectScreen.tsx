@@ -12,11 +12,25 @@ import MoodMessageModal from '../components/MoodMessageModal';
 import { buildDiaryEntry } from '../utils/generateDiary';
 import { pickMoodMessage } from '../data/moodMessages';
 import { detectToneFromText } from '../utils/detectTone';
-import { applyCustomLineAndTone, getLastName, saveEntry, setLastName } from '../utils/storage';
+import { objectParticle } from '../utils/korean';
+import {
+  addCustomWord,
+  applyCustomLineAndTone,
+  getCustomWords,
+  getLastName,
+  removeCustomWord,
+  saveEntry,
+  setLastName,
+} from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
 
 const SET_SIZE = 8;
+const CUSTOM_EMOJI_OPTIONS = ['✨', '📌', '💭', '🌟', '🍀', '🎈', '🖋️', '📷'];
+
+function isCustomWordId(id: string) {
+  return id.startsWith('custom-');
+}
 
 export default function CardSelectScreen({ navigation, route }: Props) {
   const { tone } = route.params;
@@ -30,16 +44,25 @@ export default function CardSelectScreen({ navigation, route }: Props) {
   const [moodMessage, setMoodMessage] = useState('');
   const [setIndex, setSetIndex] = useState(0);
   const [customInput, setCustomInput] = useState('');
+  const [customWords, setCustomWords] = useState<WordItem[]>([]);
+  const [addWordOpen, setAddWordOpen] = useState(false);
+  const [newWordLabel, setNewWordLabel] = useState('');
+  const [newWordEmoji, setNewWordEmoji] = useState(CUSTOM_EMOJI_OPTIONS[0]);
+  const [deleteCandidate, setDeleteCandidate] = useState<WordItem | null>(null);
 
   const category = CATEGORIES[roundIndex];
   const isLastRound = roundIndex === CATEGORIES.length - 1;
   const totalSets = Math.ceil(category.words.length / SET_SIZE);
-  const visibleWords = category.words.slice(setIndex * SET_SIZE, setIndex * SET_SIZE + SET_SIZE);
+  const presetVisibleWords = category.words.slice(setIndex * SET_SIZE, setIndex * SET_SIZE + SET_SIZE);
+  // Custom cards always show alongside whichever preset page is visible,
+  // so a word the user added is never buried behind "다른 카드 보기".
+  const visibleWords = [...presetVisibleWords, ...customWords];
   const isLastSet = setIndex >= totalSets - 1;
 
   useEffect(() => {
     setSetIndex(0);
-  }, [roundIndex]);
+    getCustomWords().then((map) => setCustomWords(map[category.key] ?? []));
+  }, [category.key, roundIndex]);
 
   const commitSelection = useCallback(
     (word: WordItem, name: string | undefined) => {
@@ -104,6 +127,41 @@ export default function CardSelectScreen({ navigation, route }: Props) {
     }
   };
 
+  const handleOpenAddWord = () => {
+    setNewWordLabel('');
+    setNewWordEmoji(CUSTOM_EMOJI_OPTIONS[0]);
+    setAddWordOpen(true);
+  };
+
+  const handleConfirmAddWord = async () => {
+    const label = newWordLabel.trim();
+    if (!label) return;
+    const word: WordItem = {
+      id: `custom-${category.key}-${Date.now()}`,
+      label,
+      emoji: newWordEmoji,
+      // A generic but always-grammatical past-tense fragment, since a
+      // user-typed word can't get the hand-crafted sentences the presets
+      // have — tone-swapping still works since it still ends in "다".
+      fragment: `${label}${objectParticle(label)} 골랐다`,
+    };
+    await addCustomWord(category.key, word);
+    setCustomWords((prev) => [...prev, word]);
+    setAddWordOpen(false);
+  };
+
+  const handleLongPressWord = (word: WordItem) => {
+    if (!isCustomWordId(word.id)) return;
+    setDeleteCandidate(word);
+  };
+
+  const handleConfirmDeleteWord = async () => {
+    if (!deleteCandidate) return;
+    await removeCustomWord(category.key, deleteCandidate.id);
+    setCustomWords((prev) => prev.filter((w) => w.id !== deleteCandidate.id));
+    setDeleteCandidate(null);
+  };
+
   const handleContinueToResult = async () => {
     if (!pendingEntry) return;
     const trimmed = customInput.trim();
@@ -155,6 +213,7 @@ export default function CardSelectScreen({ navigation, route }: Props) {
             selected={word.id === selectedId}
             disabled={busy}
             onPress={handlePick}
+            onLongPress={handleLongPressWord}
           />
         ))}
 
@@ -168,6 +227,13 @@ export default function CardSelectScreen({ navigation, route }: Props) {
             </Text>
           </Pressable>
         )}
+
+        <Pressable
+          style={({ pressed }) => [styles.moreBtn, pressed && styles.pressed]}
+          onPress={handleOpenAddWord}
+        >
+          <Text style={styles.moreBtnText}>+ 나만의 카드 추가</Text>
+        </Pressable>
       </ScrollView>
 
       <Modal visible={namePrompt !== null} transparent animationType="fade">
@@ -216,6 +282,86 @@ export default function CardSelectScreen({ navigation, route }: Props) {
           onContinue={handleContinueToResult}
         />
       )}
+
+      <Modal visible={addWordOpen} transparent animationType="fade" onRequestClose={() => setAddWordOpen(false)}>
+        <View style={styles.backdrop}>
+          <View style={styles.promptCard}>
+            <Text style={styles.promptTitle}>나만의 카드 추가</Text>
+            <Text style={styles.promptSub}>{category.title} 카테고리에 새 단어를 추가해요</Text>
+            <View style={styles.emojiPickerRow}>
+              {CUSTOM_EMOJI_OPTIONS.map((emoji) => (
+                <Pressable
+                  key={emoji}
+                  style={[styles.emojiOption, newWordEmoji === emoji && styles.emojiOptionActive]}
+                  onPress={() => setNewWordEmoji(emoji)}
+                >
+                  <Text style={styles.emojiOptionText}>{emoji}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <TextInput
+              style={styles.promptInput}
+              value={newWordLabel}
+              onChangeText={setNewWordLabel}
+              placeholder="예: 두근두근한 만남"
+              placeholderTextColor={theme.inkSoft}
+              autoFocus
+            />
+            <View style={styles.promptActions}>
+              <Pressable
+                style={({ pressed }) => [styles.promptBtn, pressed && styles.pressed]}
+                onPress={() => setAddWordOpen(false)}
+              >
+                <Text style={styles.promptBtnText}>취소</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.promptBtn,
+                  styles.promptBtnPrimary,
+                  pressed && styles.pressed,
+                ]}
+                onPress={handleConfirmAddWord}
+                disabled={!newWordLabel.trim()}
+              >
+                <Text style={styles.promptBtnPrimaryText}>추가</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={deleteCandidate !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteCandidate(null)}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.promptCard}>
+            <Text style={styles.promptEmoji}>{deleteCandidate?.emoji}</Text>
+            <Text style={styles.promptTitle}>'{deleteCandidate?.label}' 카드를 삭제할까요?</Text>
+            <Text style={styles.promptSub}>내가 추가한 카드는 다시 만들 수 있어요</Text>
+            <View style={styles.promptActions}>
+              <Pressable
+                style={({ pressed }) => [styles.promptBtn, pressed && styles.pressed]}
+                onPress={() => setDeleteCandidate(null)}
+              >
+                <Text style={styles.promptBtnText}>취소</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.promptBtn,
+                  styles.promptBtnPrimary,
+                  pressed && styles.pressed,
+                ]}
+                onPress={handleConfirmDeleteWord}
+              >
+                <Text style={styles.promptBtnPrimaryText}>삭제</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -296,6 +442,30 @@ const styles = StyleSheet.create({
     color: theme.inkSoft,
     marginBottom: 16,
     textAlign: 'center',
+  },
+  emojiPickerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  emojiOption: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.bg,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  emojiOptionActive: {
+    borderColor: theme.accent,
+    backgroundColor: theme.accentSoft,
+  },
+  emojiOptionText: {
+    fontSize: 18,
   },
   promptInput: {
     width: '100%',

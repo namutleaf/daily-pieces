@@ -2,6 +2,9 @@ export type StickerItem = {
   id: string;
   emoji: string;
   label: string;
+  // Only set for streak-reward stickers: the minimum streak (in days, ever
+  // reached — see utils/milestones.ts) required before it can be placed.
+  unlockAt?: number;
 };
 
 export type StickerPack = {
@@ -38,6 +41,16 @@ export const STICKER_PACKS: StickerPack[] = [
     ],
   },
   {
+    id: 'milestones',
+    title: '연속 기록 보상',
+    free: true,
+    stickers: [
+      { id: 'milestone-7', emoji: '🥉', label: '7일 연속', unlockAt: 7 },
+      { id: 'milestone-30', emoji: '🥈', label: '30일 연속', unlockAt: 30 },
+      { id: 'milestone-100', emoji: '🥇', label: '100일 연속', unlockAt: 100 },
+    ],
+  },
+  {
     id: 'coming-soon',
     title: '새로 올 스티커',
     free: false,
@@ -56,4 +69,16 @@ export function findStickerById(id: string): StickerItem | undefined {
     if (found) return found;
   }
   return undefined;
+}
+
+// A sticker is pickable when its pack isn't gated (the "coming soon" pack)
+// and, for reward stickers, the streak that unlocks it has been reached.
+export function isStickerUnlocked(
+  pack: StickerPack,
+  sticker: StickerItem,
+  unlockedMilestones: number[]
+): boolean {
+  if (!pack.free) return false;
+  if (sticker.unlockAt !== undefined) return unlockedMilestones.includes(sticker.unlockAt);
+  return true;
 }

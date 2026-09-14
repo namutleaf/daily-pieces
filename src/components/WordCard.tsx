@@ -9,9 +9,10 @@ type Props = {
   selected?: boolean;
   disabled?: boolean;
   onPress: (word: WordItem) => void;
+  onLongPress?: (word: WordItem) => void;
 };
 
-export default function WordCard({ word, selected, disabled, onPress }: Props) {
+export default function WordCard({ word, selected, disabled, onPress, onLongPress }: Props) {
   const floatAnim = useRef(new Animated.Value(0)).current;
   const pressAnim = useRef(new Animated.Value(1)).current;
 
@@ -67,6 +68,8 @@ export default function WordCard({ word, selected, disabled, onPress }: Props) {
     <Pressable
       disabled={disabled}
       onPress={() => onPress(word)}
+      onLongPress={onLongPress ? () => onLongPress(word) : undefined}
+      delayLongPress={450}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={styles.touchArea}

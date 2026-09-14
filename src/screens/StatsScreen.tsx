@@ -6,9 +6,17 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { DiaryEntry } from '../types';
 import { CATEGORIES } from '../data/words';
-import { theme } from '../theme';
+import { theme, MOOD_PALETTES } from '../theme';
 import { loadEntries } from '../utils/storage';
-import { computeStreak, computeLongestStreak, mostFrequentByCategory } from '../utils/stats';
+import {
+  computeStreak,
+  computeLongestStreak,
+  mostFrequentByCategory,
+  moodFrequency,
+  recentMoodStrip,
+} from '../utils/stats';
+
+const MOOD_STRIP_DAYS = 14;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Stats'>;
 
@@ -28,6 +36,9 @@ export default function StatsScreen({ navigation }: Props) {
   const streak = computeStreak(entries);
   const longest = computeLongestStreak(entries);
   const topWords = mostFrequentByCategory(entries);
+  const moods = moodFrequency(entries);
+  const strip = recentMoodStrip(entries, MOOD_STRIP_DAYS);
+  const maxMoodCount = moods[0]?.count ?? 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -60,6 +71,49 @@ export default function StatsScreen({ navigation }: Props) {
               <Text style={styles.statLabel}>최장 연속 기록</Text>
             </View>
           </View>
+
+          {moods.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>기분 흐름</Text>
+              <View style={styles.moodStrip}>
+                {strip.map((day) => (
+                  <View
+                    key={day.dateKey}
+                    style={[
+                      styles.moodStripCell,
+                      {
+                        backgroundColor: day.paletteKey
+                          ? MOOD_PALETTES[day.paletteKey].colors[0]
+                          : theme.border,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+              <Text style={styles.moodStripHint}>최근 {MOOD_STRIP_DAYS}일</Text>
+
+              <View style={styles.moodList}>
+                {moods.map((mood) => (
+                  <View key={mood.key} style={styles.moodRow}>
+                    <View style={[styles.moodSwatch, { backgroundColor: MOOD_PALETTES[mood.key].colors[0] }]} />
+                    <Text style={styles.moodLabel}>{mood.key}</Text>
+                    <View style={styles.moodBarTrack}>
+                      <View
+                        style={[
+                          styles.moodBarFill,
+                          {
+                            width: `${(mood.count / maxMoodCount) * 100}%`,
+                            backgroundColor: MOOD_PALETTES[mood.key].colors[1],
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.moodCount}>{mood.count}회</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
 
           <Text style={styles.sectionTitle}>가장 자주 고른 조각</Text>
           <View style={styles.wordList}>
@@ -141,6 +195,60 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.ink,
     marginBottom: 12,
+  },
+  moodStrip: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 6,
+  },
+  moodStripCell: {
+    flex: 1,
+    height: 28,
+    borderRadius: 6,
+  },
+  moodStripHint: {
+    fontSize: 11,
+    color: theme.inkSoft,
+    textAlign: 'right',
+    marginBottom: 16,
+  },
+  moodList: {
+    gap: 10,
+    marginBottom: 28,
+  },
+  moodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  moodSwatch: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  moodLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.ink,
+    width: 62,
+  },
+  moodBarTrack: {
+    flex: 1,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.border,
+    overflow: 'hidden',
+  },
+  moodBarFill: {
+    height: '100%',
+    borderRadius: 5,
+  },
+  moodCount: {
+    fontSize: 12,
+    color: theme.inkSoft,
+    fontWeight: '600',
+    width: 32,
+    textAlign: 'right',
   },
   wordList: {
     gap: 10,

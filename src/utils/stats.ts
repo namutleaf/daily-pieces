@@ -1,5 +1,5 @@
 import { CATEGORIES } from '../data/words';
-import { CategoryKey, DiaryEntry } from '../types';
+import { CategoryKey, DiaryEntry, PaletteKey } from '../types';
 
 export function dateKeyFromTimestamp(ts: number): string {
   const d = new Date(ts);
@@ -87,6 +87,36 @@ export function mostFrequentByCategory(
     if (!byLabel) continue;
     const top = Object.values(byLabel).sort((a, b) => b.count - a.count)[0];
     result[category.key] = top;
+  }
+  return result;
+}
+
+export type MoodCount = { key: PaletteKey; count: number };
+
+export function moodFrequency(entries: DiaryEntry[]): MoodCount[] {
+  const tally = new Map<PaletteKey, number>();
+  for (const e of entries) {
+    tally.set(e.paletteKey, (tally.get(e.paletteKey) ?? 0) + 1);
+  }
+  return Array.from(tally.entries())
+    .map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export type MoodStripDay = { dateKey: string; paletteKey: PaletteKey | null };
+
+// The last `days` calendar days (today last), each tagged with that day's
+// recorded mood — the actual word picked, not any cosmetic background
+// re-skin — so a "기분 흐름" strip can be drawn without a charting library.
+export function recentMoodStrip(entries: DiaryEntry[], days: number): MoodStripDay[] {
+  const byDate = groupEntriesByDate(entries);
+  const today = new Date();
+  const result: MoodStripDay[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+    const key = dateKeyFromTimestamp(d.getTime());
+    const dayEntries = byDate.get(key);
+    result.push({ dateKey: key, paletteKey: dayEntries?.[0]?.paletteKey ?? null });
   }
   return result;
 }
