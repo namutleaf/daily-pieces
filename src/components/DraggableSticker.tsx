@@ -1,0 +1,122 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { findStickerById } from '../data/stickers';
+import { PlacedSticker } from '../types';
+
+type Props = {
+  placed: PlacedSticker;
+  cardWidth: number;
+  cardHeight: number;
+  interactive: boolean;
+  onChange: (patch: Pick<PlacedSticker, 'x' | 'y' | 'scale' | 'rotation'>) => void;
+};
+
+const BASE_SIZE = 40;
+const MIN_SCALE = 0.4;
+const MAX_SCALE = 3;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+export default function DraggableSticker({ placed, cardWidth, cardHeight, interactive, onChange }: Props) {
+  const sticker = findStickerById(placed.stickerId);
+
+  // Instagram-style stickers: one finger held down keeps moving it, adding a
+  // second finger pinches/rotates at the same time — no visible handles or
+  // border, just direct manipulation. Each gesture tracks its own "value at
+  // gesture start" so simultaneous pan+pinch+rotate compose without one
+  // gesture's start clobbering another's in-progress baseline.
+  const [live, setLive] = useState(placed);
+  const liveRef = useRef(live);
+  liveRef.current = live;
+
+  const draggingRef = useRef(false);
+  useEffect(() => {
+    if (!draggingRef.current) setLive(placed);
+  }, [placed.x, placed.y, placed.scale, placed.rotation]);
+
+  const basePan = useRef({ x: placed.x, y: placed.y });
+  const baseScale = useRef(placed.scale);
+  const baseRotation = useRef(placed.rotation);
+
+  const commit = () => onChange(liveRef.current);
+
+  const pan = Gesture.Pan()
+    .onBegin(() => {
+      draggingRef.current = true;
+      basePan.current = { x: liveRef.current.x, y: liveRef.current.y };
+    })
+    .onUpdate((e) => {
+      setLive((prev) => ({
+        ...prev,
+        x: clamp(basePan.current.x + e.translationX / cardWidth, 0, 1),
+        y: clamp(basePan.current.y + e.translationY / cardHeight, 0, 1),
+      }));
+    })
+    .onFinalize(() => {
+      draggingRef.current = false;
+      commit();
+    });
+
+  const pinch = Gesture.Pinch()
+    .onBegin(() => {
+      draggingRef.current = true;
+      baseScale.current = liveRef.current.scale;
+    })
+    .onUpdate((e) => {
+      setLive((prev) => ({ ...prev, scale: clamp(baseScale.current * e.scale, MIN_SCALE, MAX_SCALE) }));
+    })
+    .onFinalize(() => {
+      draggingRef.current = false;
+      commit();
+    });
+
+  const rotate = Gesture.Rotation()
+    .onBegin(() => {
+      draggingRef.current = true;
+      baseRotation.current = liveRef.current.rotation;
+    })
+    .onUpdate((e) => {
+      setLive((prev) => ({ ...prev, rotation: baseRotation.current + (e.rotation * 180) / Math.PI }));
+    })
+    .onFinalize(() => {
+      draggingRef.current = false;
+      commit();
+    });
+
+  const composed = Gesture.Simultaneous(pan, pinch, rotate);
+
+  if (!sticker || cardWidth === 0 || cardHeight === 0) return null;
+
+  const size = BASE_SIZE * live.scale;
+  const content = (
+    <Text
+      style={[
+        styles.emoji,
+        {
+          left: live.x * cardWidth - size / 2,
+          top: live.y * cardHeight - size / 2,
+          fontSize: size,
+          transform: [{ rotate: `${live.rotation}deg` }],
+        },
+      ]}
+    >
+      {sticker.emoji}
+    </Text>
+  );
+
+  if (!interactive) return content;
+
+  return <GestureDetector gesture={composed}>{content}</GestureDetector>;
+}
+
+const styles = StyleSheet.create({
+  emoji: {
+    position: 'absolute',
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowRadius: 3,
+    textShadowOffset: { width: 0, height: 1 },
+  },
+});

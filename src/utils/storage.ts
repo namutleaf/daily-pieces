@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { composeDiaryText } from './generateDiary';
-import { DiaryEntry, LineKey, PaletteKey, ToneKey } from '../types';
+import { DiaryEntry, LineKey, PaletteKey, PlacedSticker, ToneKey } from '../types';
 import { FontKey } from '../data/fonts';
 
 const KEY = 'daily_pieces_entries_v1';
@@ -107,7 +107,7 @@ export async function updateBackgroundImage(
   return updated;
 }
 
-export async function updateStickers(id: string, stickers: string[]): Promise<DiaryEntry | null> {
+export async function updateStickers(id: string, stickers: PlacedSticker[]): Promise<DiaryEntry | null> {
   const entries = await loadEntries();
   let updated: DiaryEntry | null = null;
   const next = entries.map((e) => {

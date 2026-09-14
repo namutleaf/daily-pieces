@@ -17,7 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../navigation/types';
 import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
 import DiaryCard from '../components/DiaryCard';
-import { LineKey, PaletteKey } from '../types';
+import { LineKey, PaletteKey, PlacedSticker } from '../types';
 import { getFontOption } from '../data/fonts';
 import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS } from '../data/stickers';
 import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '../utils/generateDiary';
@@ -34,6 +34,15 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 type Option = { label: string; fragment: string };
 
 const ALL_LINE_KEYS: LineKey[] = ['weather', 'mood', 'person', 'place', 'activity', 'moment', 'closer'];
+
+// Where a newly added sticker first appears, before the user drags it
+// wherever they actually want it.
+const DEFAULT_STICKER_SPOTS = [
+  { x: 0.78, y: 0.16 },
+  { x: 0.58, y: 0.28 },
+  { x: 0.74, y: 0.4 },
+  { x: 0.5, y: 0.14 },
+];
 
 export default function ResultScreen({ route, navigation }: Props) {
   const { fromHistory } = route.params;
@@ -82,21 +91,36 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (updated) setEntry(updated);
   };
 
-  const handleToggleSticker = async (id: string, free: boolean) => {
+  const handleToggleSticker = async (stickerId: string, free: boolean) => {
     if (!free) {
       Alert.alert('조금만 기다려주세요', '곧 새로운 스티커로 만나요 💌');
       return;
     }
     const current = entry.stickers ?? [];
-    let next: string[];
-    if (current.includes(id)) {
-      next = current.filter((s) => s !== id);
+    const existing = current.find((s) => s.stickerId === stickerId);
+    let next: PlacedSticker[];
+    if (existing) {
+      next = current.filter((s) => s.instanceId !== existing.instanceId);
     } else if (current.length >= MAX_STICKERS_PER_ENTRY) {
       Alert.alert('스티커는 최대 4개까지', '카드 하나에 최대 4개까지 붙일 수 있어요.');
       return;
     } else {
-      next = [...current, id];
+      const spot = DEFAULT_STICKER_SPOTS[current.length % DEFAULT_STICKER_SPOTS.length];
+      next = [
+        ...current,
+        { instanceId: `${stickerId}-${Date.now()}`, stickerId, x: spot.x, y: spot.y, scale: 1, rotation: 0 },
+      ];
     }
+    const updated = await updateStickers(entry.id, next);
+    if (updated) setEntry(updated);
+  };
+
+  const handleStickerChange = async (
+    instanceId: string,
+    patch: Pick<PlacedSticker, 'x' | 'y' | 'scale' | 'rotation'>
+  ) => {
+    const current = entry.stickers ?? [];
+    const next = current.map((s) => (s.instanceId === instanceId ? { ...s, ...patch } : s));
     const updated = await updateStickers(entry.id, next);
     if (updated) setEntry(updated);
   };
@@ -216,6 +240,7 @@ export default function ResultScreen({ route, navigation }: Props) {
           entry={entry}
           onPressLine={(key) => setPickerKey(key)}
           onLongPressCard={() => setBgPickerOpen(true)}
+          onChangeSticker={handleStickerChange}
           fontFamily={fontFamily}
         />
 
@@ -446,7 +471,10 @@ export default function ResultScreen({ route, navigation }: Props) {
         <Pressable style={styles.backdrop} onPress={() => setStickerSheetOpen(false)}>
           <ScrollView style={styles.stickerSheet} contentContainerStyle={styles.stickerSheetContent}>
             <Text style={styles.sheetTitle}>스티커로 꾸며보세요</Text>
-            <Text style={styles.stickerHint}>최대 {MAX_STICKERS_PER_ENTRY}개까지 붙일 수 있어요</Text>
+            <Text style={styles.stickerHint}>
+              최대 {MAX_STICKERS_PER_ENTRY}개까지 붙일 수 있어요{'\n'}
+              카드 위 스티커는 끌어서 옮기고, 두 손가락으로 돌리거나 크기를 바꿀 수 있어요
+            </Text>
             {STICKER_PACKS.map((pack) => (
               <View key={pack.id} style={styles.stickerPack}>
                 <View style={styles.stickerPackHeader}>
@@ -455,7 +483,7 @@ export default function ResultScreen({ route, navigation }: Props) {
                 </View>
                 <View style={styles.stickerGrid}>
                   {pack.stickers.map((sticker) => {
-                    const isActive = (entry.stickers ?? []).includes(sticker.id);
+                    const isActive = (entry.stickers ?? []).some((s) => s.stickerId === sticker.id);
                     return (
                       <Pressable
                         key={sticker.id}

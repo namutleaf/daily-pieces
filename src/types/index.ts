@@ -67,7 +67,20 @@ export type DiaryEntry = {
   // A user-picked photo used as the card background instead of the mood
   // gradient. Takes priority over paletteOverride/paletteKey when set.
   backgroundImageUri?: string;
-  // Ids of decorative stickers (from src/data/stickers.ts) attached to the
-  // card, in the order they were added.
-  stickers?: string[];
+  // Decorative stickers (from src/data/stickers.ts) placed freely on the
+  // card, each with its own position/size/rotation.
+  stickers?: PlacedSticker[];
+};
+
+export type PlacedSticker = {
+  // Unique per placement, so the same sticker design can be placed more
+  // than once and each copy dragged/resized independently.
+  instanceId: string;
+  stickerId: string;
+  // Center point as a 0-1 fraction of the card's width/height, so the
+  // placement holds up across different render sizes (card vs. share image).
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
 };

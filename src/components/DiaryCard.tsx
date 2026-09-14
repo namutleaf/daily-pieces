@@ -1,18 +1,13 @@
 import React, { forwardRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, LayoutChangeEvent, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CATEGORIES } from '../data/words';
-import { findStickerById } from '../data/stickers';
-import { DiaryEntry, LineKey } from '../types';
+import DraggableSticker from './DraggableSticker';
+import { DiaryEntry, LineKey, PlacedSticker } from '../types';
 import { MOOD_PALETTES, DEFAULT_PALETTE } from '../theme';
 import { lineFinalText } from '../utils/generateDiary';
 
 const ALL_LINE_KEYS: LineKey[] = [...CATEGORIES.map((c) => c.key), 'closer'];
-
-// A slight alternating tilt so a row of stickers reads as hand-placed
-// rather than machine-aligned, without needing absolute positioning that
-// could overlap the diary text (which varies a lot in length).
-const STICKER_TILTS = ['-8deg', '6deg', '-4deg', '9deg'];
 
 type Props = {
   entry: DiaryEntry;
@@ -23,6 +18,10 @@ type Props = {
   onLongPressCard?: () => void;
   large?: boolean;
   fontFamily?: string;
+  // Stickers are only draggable/pinchable where a change handler is given
+  // (the main result view); other renders (the edit modal, the ref used
+  // only to capture a share image) show them plain.
+  onChangeSticker?: (instanceId: string, patch: Pick<PlacedSticker, 'x' | 'y' | 'scale' | 'rotation'>) => void;
 };
 
 function LineInput({
@@ -57,7 +56,16 @@ function LineInput({
 }
 
 const DiaryCard = forwardRef<View, Props>(
-  ({ entry, editing, draftLines, onChangeLine, onPressLine, onLongPressCard, large, fontFamily }, ref) => {
+  (
+    { entry, editing, draftLines, onChangeLine, onPressLine, onLongPressCard, large, fontFamily, onChangeSticker },
+    ref
+  ) => {
+    const [cardSize, setCardSize] = useState({ width: 0, height: 0 });
+    const handleLayout = (e: LayoutChangeEvent) => {
+      const { width, height } = e.nativeEvent.layout;
+      setCardSize({ width, height });
+    };
+
     const hasPhoto = !!entry.backgroundImageUri;
     const moodPalette = MOOD_PALETTES[entry.paletteOverride ?? entry.paletteKey] ?? DEFAULT_PALETTE;
     // A photo background needs its own high-contrast text colors instead of
@@ -74,7 +82,12 @@ const DiaryCard = forwardRef<View, Props>(
     const editLineKeys = hasCustomLine ? [...ALL_LINE_KEYS, 'custom' as LineKey] : ALL_LINE_KEYS;
 
     return (
-      <View ref={ref} collapsable={false} style={editing ? styles.wrapperEditing : styles.wrapper}>
+      <View
+        ref={ref}
+        collapsable={false}
+        onLayout={handleLayout}
+        style={editing ? styles.wrapperEditing : styles.wrapper}
+      >
         {hasPhoto ? (
           <>
             <Image
@@ -102,23 +115,6 @@ const DiaryCard = forwardRef<View, Props>(
             <Text style={[styles.brand, { color: palette.text }]}>Daily Pieces</Text>
             <Text style={[styles.date, { color: palette.subtext }]}>{entry.dateLabel}</Text>
           </View>
-
-          {!!entry.stickers?.length && (
-            <View style={styles.stickerRow}>
-              {entry.stickers.map((id, i) => {
-                const sticker = findStickerById(id);
-                if (!sticker) return null;
-                return (
-                  <Text
-                    key={`${id}-${i}`}
-                    style={[styles.stickerEmoji, { transform: [{ rotate: STICKER_TILTS[i % STICKER_TILTS.length] }] }]}
-                  >
-                    {sticker.emoji}
-                  </Text>
-                );
-              })}
-            </View>
-          )}
 
           <View style={editing ? styles.bodyWrapEditing : styles.bodyWrap}>
             {editing ? (
@@ -176,6 +172,21 @@ const DiaryCard = forwardRef<View, Props>(
             ))}
           </View>
         </Pressable>
+
+        {!!entry.stickers?.length && cardSize.width > 0 && (
+          <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            {entry.stickers.map((placed) => (
+              <DraggableSticker
+                key={placed.instanceId}
+                placed={placed}
+                cardWidth={cardSize.width}
+                cardHeight={cardSize.height}
+                interactive={!!onChangeSticker}
+                onChange={(patch) => onChangeSticker?.(placed.instanceId, patch)}
+              />
+            ))}
+          </View>
+        )}
       </View>
     );
   }
@@ -264,17 +275,5 @@ const styles = StyleSheet.create({
   tag: {
     fontSize: 12,
     fontWeight: '600',
-  },
-  stickerRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 10,
-  },
-  stickerEmoji: {
-    fontSize: 24,
-    textShadowColor: 'rgba(0,0,0,0.15)',
-    textShadowRadius: 3,
-    textShadowOffset: { width: 0, height: 1 },
   },
 });
