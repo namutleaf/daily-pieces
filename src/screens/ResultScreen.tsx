@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { MaterialIcons } from '@expo/vector-icons';
 import { captureRef } from 'react-native-view-shot';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
@@ -34,10 +35,13 @@ import {
   updateTextAlign,
 } from '../utils/storage';
 
-const ALIGN_OPTIONS: { value: NonNullable<DiaryEntry['textAlign']>; label: string }[] = [
-  { value: 'left', label: '왼쪽' },
-  { value: 'center', label: '가운데' },
-  { value: 'right', label: '오른쪽' },
+const ALIGN_OPTIONS: {
+  value: NonNullable<DiaryEntry['textAlign']>;
+  icon: keyof typeof MaterialIcons.glyphMap;
+}[] = [
+  { value: 'left', icon: 'format-align-left' },
+  { value: 'center', icon: 'format-align-center' },
+  { value: 'right', icon: 'format-align-right' },
 ];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
@@ -330,44 +334,38 @@ export default function ResultScreen({ route, navigation }: Props) {
           </View>
         )}
 
-        <View style={styles.toolRow}>
-          <Pressable
-            style={({ pressed }) => [styles.toolBtn, pressed && styles.pressed]}
-            onPress={handleOpenEdit}
-          >
-            <Text style={styles.toolBtnIcon}>✏️</Text>
-            <Text style={styles.toolBtnLabel}>수정</Text>
+        <View style={styles.iconRow}>
+          <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]} onPress={handleOpenEdit}>
+            <MaterialIcons name="edit" size={22} color={theme.inkSoft} />
           </Pressable>
-
           <Pressable
-            style={({ pressed }) => [styles.toolBtn, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
             onPress={() => setStickerSheetOpen(true)}
           >
-            <Text style={styles.toolBtnIcon}>🏷️</Text>
-            <Text style={styles.toolBtnLabel}>스티커</Text>
+            <MaterialIcons name="local-offer" size={22} color={theme.inkSoft} />
           </Pressable>
-
           <Pressable
-            style={({ pressed }) => [styles.toolBtn, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
             onPress={handleToggleEntryLock}
           >
-            <Text style={styles.toolBtnIcon}>{entry.locked ? '🔒' : '🔓'}</Text>
-            <Text style={styles.toolBtnLabel}>잠금</Text>
+            <MaterialIcons
+              name={entry.locked ? 'lock' : 'lock-open'}
+              size={22}
+              color={entry.locked ? theme.accent : theme.inkSoft}
+            />
           </Pressable>
-        </View>
 
-        <View style={styles.alignRow}>
+          <View style={styles.iconDivider} />
+
           {ALIGN_OPTIONS.map((opt) => {
             const active = (entry.textAlign ?? 'left') === opt.value;
             return (
               <Pressable
                 key={opt.value}
-                style={[styles.alignBtn, active && styles.alignBtnActive]}
+                style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
                 onPress={() => handleSetAlign(opt.value)}
               >
-                <Text style={[styles.alignBtnText, active && styles.alignBtnTextActive]}>
-                  {opt.label}
-                </Text>
+                <MaterialIcons name={opt.icon} size={22} color={active ? theme.accent : theme.inkSoft} />
               </Pressable>
             );
           })}
@@ -656,54 +654,20 @@ const styles = StyleSheet.create({
     color: theme.accentSoft,
     fontWeight: '800',
   },
-  toolRow: {
+  iconRow: {
     marginTop: 16,
     flexDirection: 'row',
-    gap: 10,
-  },
-  toolBtn: {
-    flex: 1,
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: theme.surface,
-    borderWidth: 1.5,
-    borderColor: theme.border,
+    justifyContent: 'center',
+    gap: 22,
   },
-  toolBtnIcon: {
-    fontSize: 18,
+  iconBtn: {
+    padding: 4,
   },
-  toolBtnLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: theme.inkSoft,
-  },
-  alignRow: {
-    marginTop: 10,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  alignBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 9,
-    borderRadius: 10,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  alignBtnActive: {
-    backgroundColor: theme.accentSoft,
-    borderColor: theme.accent,
-  },
-  alignBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.inkSoft,
-  },
-  alignBtnTextActive: {
-    color: theme.accent,
+  iconDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: theme.border,
   },
   actions: {
     marginTop: 20,
