@@ -11,6 +11,8 @@ type Props = {
   onSelectDay: (entry: DiaryEntry) => void;
 };
 
+type Cell = { day: number; key: string } | null;
+
 export default function CalendarGrid({ entries, onSelectDay }: Props) {
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
@@ -25,12 +27,18 @@ export default function CalendarGrid({ entries, onSelectDay }: Props) {
   const firstWeekday = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const cells: Array<{ day: number; key: string } | null> = [];
+  const cells: Cell[] = [];
   for (let i = 0; i < firstWeekday; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const key = dateKeyFromTimestamp(new Date(year, month, d).getTime());
     cells.push({ day: d, key });
   }
+  // Pad the last row out to a full 7 so every row has the same number of
+  // (equal-width) columns as the weekday header, whatever the screen width.
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const rows: Cell[][] = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
 
   const goPrevMonth = () => setCursor(new Date(year, month - 1, 1));
   const goNextMonth = () => setCursor(new Date(year, month + 1, 1));
@@ -51,38 +59,41 @@ export default function CalendarGrid({ entries, onSelectDay }: Props) {
 
       <View style={styles.weekRow}>
         {WEEKDAYS.map((w) => (
-          <Text key={w} style={styles.weekday}>
-            {w}
-          </Text>
+          <View key={w} style={styles.weekdayCol}>
+            <Text style={styles.weekday}>{w}</Text>
+          </View>
         ))}
       </View>
 
-      <View style={styles.grid}>
-        {cells.map((cell, i) => {
-          if (!cell) return <View key={`blank-${i}`} style={styles.cell} />;
-          const dayEntries = byDate.get(cell.key);
-          const hasEntry = !!dayEntries?.length;
-          const isToday = cell.key === todayKey;
-          return (
-            <Pressable
-              key={cell.key}
-              style={styles.cell}
-              disabled={!hasEntry}
-              onPress={() => dayEntries && onSelectDay(dayEntries[0])}
-            >
-              <View style={[styles.dayCircle, isToday && styles.todayCircle]}>
-                <Text style={[styles.dayText, isToday && styles.todayText]}>{cell.day}</Text>
-              </View>
-              {hasEntry && <View style={styles.dot} />}
-            </Pressable>
-          );
-        })}
-      </View>
+      {rows.map((row, rowIndex) => (
+        // Each row is its own fixed-7-column flex row (rather than relying
+        // on flexWrap with fixed pixel widths), so columns can never fall
+        // out of sync with the weekday header on a narrow screen.
+        <View key={`row-${rowIndex}`} style={styles.gridRow}>
+          {row.map((cell, i) => {
+            if (!cell) return <View key={`blank-${rowIndex}-${i}`} style={styles.cell} />;
+            const dayEntries = byDate.get(cell.key);
+            const hasEntry = !!dayEntries?.length;
+            const isToday = cell.key === todayKey;
+            return (
+              <Pressable
+                key={cell.key}
+                style={styles.cell}
+                disabled={!hasEntry}
+                onPress={() => dayEntries && onSelectDay(dayEntries[0])}
+              >
+                <View style={[styles.dayCircle, isToday && styles.todayCircle]}>
+                  <Text style={[styles.dayText, isToday && styles.todayText]}>{cell.day}</Text>
+                </View>
+                {hasEntry && <View style={styles.dot} />}
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
     </View>
   );
 }
-
-const CELL_SIZE = 44;
 
 const styles = StyleSheet.create({
   header: {
@@ -109,20 +120,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 4,
   },
+  weekdayCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
   weekday: {
-    width: CELL_SIZE,
     textAlign: 'center',
     fontSize: 12,
     fontWeight: '600',
     color: theme.inkSoft,
   },
-  grid: {
+  gridRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
   },
   cell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
+    flex: 1,
+    aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

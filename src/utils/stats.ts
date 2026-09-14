@@ -30,6 +30,14 @@ export function computeStreak(entries: DiaryEntry[]): number {
   return streak;
 }
 
+// "YYYY-MM-DD" parses as UTC midnight if handed straight to `new Date(...)`,
+// not local midnight — a classic footgun. Split it ourselves so this always
+// lines up with the local-time dates used everywhere else in this file.
+function parseDateKey(key: string): number {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).getTime();
+}
+
 export function computeLongestStreak(entries: DiaryEntry[]): number {
   const days = Array.from(new Set(entries.map((e) => dateKeyFromTimestamp(e.createdAt)))).sort();
   if (days.length === 0) return 0;
@@ -37,9 +45,7 @@ export function computeLongestStreak(entries: DiaryEntry[]): number {
   let longest = 1;
   let current = 1;
   for (let i = 1; i < days.length; i++) {
-    const diffDays = Math.round(
-      (new Date(days[i]).getTime() - new Date(days[i - 1]).getTime()) / 86400000
-    );
+    const diffDays = Math.round((parseDateKey(days[i]) - parseDateKey(days[i - 1])) / 86400000);
     current = diffDays === 1 ? current + 1 : 1;
     longest = Math.max(longest, current);
   }
