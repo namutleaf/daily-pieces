@@ -20,11 +20,17 @@ const TEXT_SIZE_SCALE: Record<NonNullable<DiaryEntry['textSize']>, number> = {
 // snaps — Instagram/PowerPoint-style magnetic alignment.
 const SNAP_PX = 8;
 
-function snapAxis(raw: number, candidates: number[], threshold: number): number | null {
-  let best: number | null = null;
+type SnapCandidate = { value: number; kind: 'center' | 'align' };
+
+// The closest candidate within threshold wins, same as any smart-guide
+// implementation — the card center is just one entry in the list, not a
+// priority pick, so a drag near other stickers correctly prefers lining up
+// with them over pulling all the way back to center.
+function snapAxis(raw: number, candidates: SnapCandidate[], threshold: number): SnapCandidate | null {
+  let best: SnapCandidate | null = null;
   let bestDist = threshold;
   for (const c of candidates) {
-    const d = Math.abs(raw - c);
+    const d = Math.abs(raw - c.value);
     if (d < bestDist) {
       bestDist = d;
       best = c;
@@ -102,7 +108,10 @@ const DiaryCard = forwardRef<View, Props>(
     };
 
     // Guide lines currently "lit up" mid-drag, in card-fraction coordinates.
-    const [guides, setGuides] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
+    const [guides, setGuides] = useState<{ x: SnapCandidate | null; y: SnapCandidate | null }>({
+      x: null,
+      y: null,
+    });
 
     const handleStickerDragUpdate = (instanceId: string, rawX: number, rawY: number) => {
       const others = (entry.stickers ?? []).filter((s) => s.instanceId !== instanceId);
@@ -111,19 +120,28 @@ const DiaryCard = forwardRef<View, Props>(
       // Snap to: the card's own center (Instagram-style), each other
       // sticker's center (lining up rows/columns, PowerPoint-style), and the
       // midpoint between any two other stickers (even spacing between three).
-      const xCandidates = [0.5, ...others.map((s) => s.x)];
-      const yCandidates = [0.5, ...others.map((s) => s.y)];
+      // The closest one wins, so dragging near an existing row of stickers
+      // lines up with THEM rather than jumping back to card-center — the
+      // two are drawn in different colors so it's clear which one fired.
+      const xCandidates: SnapCandidate[] = [
+        { value: 0.5, kind: 'center' },
+        ...others.map((s) => ({ value: s.x, kind: 'align' as const })),
+      ];
+      const yCandidates: SnapCandidate[] = [
+        { value: 0.5, kind: 'center' },
+        ...others.map((s) => ({ value: s.y, kind: 'align' as const })),
+      ];
       for (let i = 0; i < others.length; i++) {
         for (let j = i + 1; j < others.length; j++) {
-          xCandidates.push((others[i].x + others[j].x) / 2);
-          yCandidates.push((others[i].y + others[j].y) / 2);
+          xCandidates.push({ value: (others[i].x + others[j].x) / 2, kind: 'align' });
+          yCandidates.push({ value: (others[i].y + others[j].y) / 2, kind: 'align' });
         }
       }
 
       const snappedX = snapAxis(rawX, xCandidates, SNAP_PX / cardSize.width);
       const snappedY = snapAxis(rawY, yCandidates, SNAP_PX / cardSize.height);
       setGuides({ x: snappedX, y: snappedY });
-      return { x: snappedX ?? rawX, y: snappedY ?? rawY };
+      return { x: snappedX?.value ?? rawX, y: snappedY?.value ?? rawY };
     };
 
     const handleStickerDragEnd = () => setGuides({ x: null, y: null });
@@ -273,10 +291,22 @@ const DiaryCard = forwardRef<View, Props>(
         {(guides.x !== null || guides.y !== null) && (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             {guides.x !== null && (
-              <View style={[styles.guideLineV, { left: guides.x * cardSize.width }]} />
+              <View
+                style={[
+                  styles.guideLineV,
+                  { left: guides.x.value * cardSize.width },
+                  guides.x.kind === 'center' ? styles.guideLineCenter : styles.guideLineAlign,
+                ]}
+              />
             )}
             {guides.y !== null && (
-              <View style={[styles.guideLineH, { top: guides.y * cardSize.height }]} />
+              <View
+                style={[
+                  styles.guideLineH,
+                  { top: guides.y.value * cardSize.height },
+                  guides.y.kind === 'center' ? styles.guideLineCenter : styles.guideLineAlign,
+                ]}
+              />
             )}
           </View>
         )}
@@ -368,13 +398,20 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 1,
-    backgroundColor: '#FF3B78',
   },
   guideLineH: {
     position: 'absolute',
     left: 0,
     right: 0,
     height: 1,
+  },
+  // Snapped to the card's own center (Instagram-style) — a distinct color
+  // from sticker-to-sticker alignment so it's clear which one fired.
+  guideLineCenter: {
+    backgroundColor: '#2F5FE0',
+  },
+  // Lined up (or evenly spaced) with another sticker (PowerPoint-style).
+  guideLineAlign: {
     backgroundColor: '#FF3B78',
   },
 });
