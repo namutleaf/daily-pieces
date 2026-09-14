@@ -18,8 +18,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../navigation/types';
 import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
 import DiaryCard from '../components/DiaryCard';
+import IllustrationBackground from '../components/IllustrationBackground';
 import { DiaryEntry, LineKey, PaletteKey, PlacedSticker } from '../types';
 import { getFontOption } from '../data/fonts';
+import { ILLUSTRATION_OPTIONS } from '../data/illustrations';
 import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS, StickerItem, StickerPack, isStickerUnlocked } from '../data/stickers';
 import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '../utils/generateDiary';
 import { getUnlockedMilestones } from '../utils/milestones';
@@ -33,6 +35,8 @@ import {
   updateStickers,
   updateEntryLock,
   updateTextAlign,
+  updateTextSize,
+  updateIllustration,
 } from '../utils/storage';
 
 const ALIGN_OPTIONS: {
@@ -43,6 +47,8 @@ const ALIGN_OPTIONS: {
   { value: 'center', icon: 'format-align-center' },
   { value: 'right', icon: 'format-align-right' },
 ];
+
+const TEXT_SIZES: NonNullable<DiaryEntry['textSize']>[] = ['small', 'medium', 'large'];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 type Option = { label: string; fragment: string };
@@ -86,11 +92,11 @@ export default function ResultScreen({ route, navigation }: Props) {
     setBgPickerOpen(false);
     const updated = await updatePaletteOverride(entry.id, key);
     if (!updated) return;
-    // A photo takes visual priority over the mood color, so clear it when
-    // the user explicitly picks a color instead.
-    const cleared = updated.backgroundImageUri
-      ? await updateBackgroundImage(entry.id, undefined)
-      : updated;
+    // A photo or illustration takes visual priority over the mood color, so
+    // clear those when the user explicitly picks a color instead.
+    let cleared: DiaryEntry | null = updated;
+    if (cleared.backgroundImageUri) cleared = await updateBackgroundImage(entry.id, undefined);
+    if (cleared?.illustration) cleared = await updateIllustration(entry.id, undefined);
     setEntry(cleared ?? updated);
   };
 
@@ -109,6 +115,26 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (result.canceled || !result.assets?.[0]) return;
     setBgPickerOpen(false);
     const updated = await updateBackgroundImage(entry.id, result.assets[0].uri);
+    if (!updated) return;
+    const cleared = updated.illustration ? await updateIllustration(entry.id, undefined) : updated;
+    setEntry(cleared ?? updated);
+  };
+
+  const handlePickIllustration = async (key: DiaryEntry['illustration']) => {
+    setBgPickerOpen(false);
+    const updated = await updateIllustration(entry.id, key);
+    if (!updated) return;
+    let cleared: DiaryEntry | null = updated;
+    if (cleared.backgroundImageUri) cleared = await updateBackgroundImage(entry.id, undefined);
+    setEntry(cleared ?? updated);
+  };
+
+  const handleSetTextSize = async (direction: 1 | -1) => {
+    const current = entry.textSize ?? 'medium';
+    const nextIndex = TEXT_SIZES.indexOf(current) + direction;
+    const clamped = TEXT_SIZES[Math.min(TEXT_SIZES.length - 1, Math.max(0, nextIndex))];
+    if (clamped === current) return;
+    const updated = await updateTextSize(entry.id, clamped);
     if (updated) setEntry(updated);
   };
 
@@ -336,13 +362,13 @@ export default function ResultScreen({ route, navigation }: Props) {
 
         <View style={styles.iconRow}>
           <Pressable style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]} onPress={handleOpenEdit}>
-            <MaterialIcons name="edit" size={22} color={theme.inkSoft} />
+            <MaterialIcons name="edit" size={20} color={theme.inkSoft} />
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
             onPress={() => setStickerSheetOpen(true)}
           >
-            <MaterialIcons name="local-offer" size={22} color={theme.inkSoft} />
+            <MaterialIcons name="local-offer" size={20} color={theme.inkSoft} />
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
@@ -350,7 +376,7 @@ export default function ResultScreen({ route, navigation }: Props) {
           >
             <MaterialIcons
               name={entry.locked ? 'lock' : 'lock-open'}
-              size={22}
+              size={20}
               color={entry.locked ? theme.accent : theme.inkSoft}
             />
           </Pressable>
@@ -365,10 +391,35 @@ export default function ResultScreen({ route, navigation }: Props) {
                 style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
                 onPress={() => handleSetAlign(opt.value)}
               >
-                <MaterialIcons name={opt.icon} size={22} color={active ? theme.accent : theme.inkSoft} />
+                <MaterialIcons name={opt.icon} size={20} color={active ? theme.accent : theme.inkSoft} />
               </Pressable>
             );
           })}
+
+          <View style={styles.iconDivider} />
+
+          <Pressable
+            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
+            onPress={() => handleSetTextSize(-1)}
+            disabled={(entry.textSize ?? 'medium') === 'small'}
+          >
+            <MaterialIcons
+              name="text-decrease"
+              size={20}
+              color={(entry.textSize ?? 'medium') === 'small' ? theme.border : theme.inkSoft}
+            />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
+            onPress={() => handleSetTextSize(1)}
+            disabled={(entry.textSize ?? 'medium') === 'large'}
+          >
+            <MaterialIcons
+              name="text-increase"
+              size={20}
+              color={(entry.textSize ?? 'medium') === 'large' ? theme.border : theme.inkSoft}
+            />
+          </Pressable>
         </View>
 
         <View style={styles.actions}>
@@ -515,7 +566,7 @@ export default function ResultScreen({ route, navigation }: Props) {
         onRequestClose={() => setBgPickerOpen(false)}
       >
         <Pressable style={styles.backdrop} onPress={() => setBgPickerOpen(false)}>
-          <View style={styles.sheet}>
+          <ScrollView style={styles.stickerSheet} contentContainerStyle={styles.stickerSheetContent}>
             <Text style={styles.sheetTitle}>배경을 골라보세요</Text>
             <View style={styles.swatchGrid}>
               <Pressable
@@ -534,7 +585,10 @@ export default function ResultScreen({ route, navigation }: Props) {
                 <View
                   style={[
                     styles.swatchAuto,
-                    !entry.paletteOverride && !entry.backgroundImageUri && styles.swatchActive,
+                    !entry.paletteOverride &&
+                      !entry.backgroundImageUri &&
+                      !entry.illustration &&
+                      styles.swatchActive,
                   ]}
                 >
                   <Text style={styles.swatchAutoText}>기본</Text>
@@ -543,7 +597,8 @@ export default function ResultScreen({ route, navigation }: Props) {
               </Pressable>
               {PALETTE_KEYS.map((key) => {
                 const palette = MOOD_PALETTES[key];
-                const isActive = entry.paletteOverride === key && !entry.backgroundImageUri;
+                const isActive =
+                  entry.paletteOverride === key && !entry.backgroundImageUri && !entry.illustration;
                 return (
                   <Pressable
                     key={key}
@@ -562,7 +617,26 @@ export default function ResultScreen({ route, navigation }: Props) {
                 );
               })}
             </View>
-          </View>
+
+            <Text style={styles.stickerPackTitle}>일러스트</Text>
+            <View style={[styles.swatchGrid, styles.illustrationGrid]}>
+              {ILLUSTRATION_OPTIONS.map((opt) => {
+                const isActive = entry.illustration === opt.key;
+                return (
+                  <Pressable
+                    key={opt.key}
+                    style={({ pressed }) => [styles.swatchItem, pressed && styles.sheetOptionPressed]}
+                    onPress={() => handlePickIllustration(opt.key)}
+                  >
+                    <View style={[styles.illustrationSwatch, isActive && styles.swatchActive]}>
+                      <IllustrationBackground illustration={opt.key} />
+                    </View>
+                    <Text style={styles.swatchLabel}>{opt.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </ScrollView>
         </Pressable>
       </Modal>
 
@@ -659,10 +733,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 22,
+    gap: 12,
   },
   iconBtn: {
-    padding: 4,
+    padding: 3,
   },
   iconDivider: {
     width: 1,
@@ -900,6 +974,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.inkSoft,
     textAlign: 'center',
+  },
+  illustrationGrid: {
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  illustrationSwatch: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    overflow: 'hidden',
   },
   stickerSheet: {
     maxHeight: '75%',

@@ -1,3 +1,5 @@
+import { IllustrationKey } from '../data/illustrations';
+
 export type CategoryKey =
   | 'weather'
   | 'mood'
@@ -67,6 +69,9 @@ export type DiaryEntry = {
   // A user-picked photo used as the card background instead of the mood
   // gradient. Takes priority over paletteOverride/paletteKey when set.
   backgroundImageUri?: string;
+  // A preset vector illustration background, mutually exclusive with both
+  // backgroundImageUri and paletteOverride (picking one clears the others).
+  illustration?: IllustrationKey;
   // Decorative stickers (from src/data/stickers.ts) placed freely on the
   // card, each with its own position/size/rotation.
   stickers?: PlacedSticker[];
@@ -76,6 +81,8 @@ export type DiaryEntry = {
   // How the diary text lines are aligned within the card. Undefined means
   // the default ('left').
   textAlign?: 'left' | 'center' | 'right';
+  // Diary text size. Undefined means the default ('medium').
+  textSize?: 'small' | 'medium' | 'large';
 };
 
 export type PlacedSticker = {

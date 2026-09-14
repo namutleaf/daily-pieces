@@ -141,6 +141,36 @@ export async function updateTextAlign(
   return updated;
 }
 
+export async function updateTextSize(
+  id: string,
+  textSize: DiaryEntry['textSize']
+): Promise<DiaryEntry | null> {
+  const entries = await loadEntries();
+  let updated: DiaryEntry | null = null;
+  const next = entries.map((e) => {
+    if (e.id !== id) return e;
+    updated = { ...e, textSize };
+    return updated;
+  });
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+  return updated;
+}
+
+export async function updateIllustration(
+  id: string,
+  illustration: DiaryEntry['illustration']
+): Promise<DiaryEntry | null> {
+  const entries = await loadEntries();
+  let updated: DiaryEntry | null = null;
+  const next = entries.map((e) => {
+    if (e.id !== id) return e;
+    updated = { ...e, illustration };
+    return updated;
+  });
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+  return updated;
+}
+
 export async function updateStickers(id: string, stickers: PlacedSticker[]): Promise<DiaryEntry | null> {
   const entries = await loadEntries();
   let updated: DiaryEntry | null = null;

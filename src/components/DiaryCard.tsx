@@ -3,11 +3,18 @@ import { Image, LayoutChangeEvent, Pressable, StyleSheet, Text, TextInput, View 
 import { LinearGradient } from 'expo-linear-gradient';
 import { CATEGORIES } from '../data/words';
 import DraggableSticker from './DraggableSticker';
+import IllustrationBackground from './IllustrationBackground';
 import { DiaryEntry, LineKey, PlacedSticker } from '../types';
 import { MOOD_PALETTES, DEFAULT_PALETTE } from '../theme';
 import { lineFinalText } from '../utils/generateDiary';
 
 const ALL_LINE_KEYS: LineKey[] = [...CATEGORIES.map((c) => c.key), 'closer'];
+
+const TEXT_SIZE_SCALE: Record<NonNullable<DiaryEntry['textSize']>, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.2,
+};
 
 type Props = {
   entry: DiaryEntry;
@@ -30,15 +37,14 @@ function LineInput({
   onChangeText,
   textStyle,
   color,
-  large,
+  lineHeight,
 }: {
   value: string;
   onChangeText: (t: string) => void;
   textStyle: any;
   color: string;
-  large?: boolean;
+  lineHeight: number;
 }) {
-  const lineHeight = large ? 30 : 23;
   // Guarantee room for at least two wrapped lines up front (some platforms'
   // web TextInput never fires onContentSizeChange), then grow further if it does.
   const [height, setHeight] = useState(lineHeight * 2);
@@ -79,15 +85,22 @@ const DiaryCard = forwardRef<View, Props>(
     };
 
     const hasPhoto = !!entry.backgroundImageUri;
+    const hasIllustration = !!entry.illustration && !hasPhoto;
     const moodPalette = MOOD_PALETTES[entry.paletteOverride ?? entry.paletteKey] ?? DEFAULT_PALETTE;
-    // A photo background needs its own high-contrast text colors instead of
-    // the mood palette's, since the mood colors assume they're the backdrop.
-    const palette = hasPhoto
-      ? { colors: moodPalette.colors, text: '#FFFFFF', subtext: 'rgba(255,255,255,0.8)' }
-      : moodPalette;
+    // A photo or illustration background needs its own high-contrast text
+    // colors instead of the mood palette's, since those assume they're the backdrop.
+    const palette =
+      hasPhoto || hasIllustration
+        ? { colors: moodPalette.colors, text: '#FFFFFF', subtext: 'rgba(255,255,255,0.8)' }
+        : moodPalette;
     const fontStyle = fontFamily ? { fontFamily, fontWeight: 'normal' as const } : null;
     const align = entry.textAlign ?? 'left';
-    const textStyle = [styles.diaryText, large && styles.diaryTextLarge, fontStyle, { textAlign: align }];
+    const sizeScale = TEXT_SIZE_SCALE[entry.textSize ?? 'medium'];
+    const baseFontSize = large ? 19 : 15;
+    const baseLineHeight = large ? 30 : 23;
+    const fontSize = baseFontSize * sizeScale;
+    const lineHeight = baseLineHeight * sizeScale;
+    const textStyle = [styles.diaryText, fontStyle, { textAlign: align, fontSize, lineHeight }];
     const tagsJustify =
       align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
 
@@ -110,6 +123,13 @@ const DiaryCard = forwardRef<View, Props>(
               style={StyleSheet.absoluteFill}
               resizeMode="cover"
             />
+            <View style={[StyleSheet.absoluteFill, styles.photoScrim]} />
+          </>
+        ) : hasIllustration ? (
+          <>
+            <View style={StyleSheet.absoluteFill}>
+              <IllustrationBackground illustration={entry.illustration!} />
+            </View>
             <View style={[StyleSheet.absoluteFill, styles.photoScrim]} />
           </>
         ) : (
@@ -141,7 +161,7 @@ const DiaryCard = forwardRef<View, Props>(
                       onChangeText={(t) => onChangeLine?.(key, t)}
                       textStyle={textStyle}
                       color={palette.text}
-                      large={large}
+                      lineHeight={lineHeight}
                     />
                   </View>
                 ))}
@@ -160,7 +180,7 @@ const DiaryCard = forwardRef<View, Props>(
                     <Text style={[...textStyle, { color: palette.text }]}>{currentText(c.key)}</Text>
                   </Pressable>
                 ))}
-                <View style={{ height: large ? 30 : 23 }} />
+                <View style={{ height: lineHeight }} />
                 <Pressable
                   onPress={() => onPressLine?.('closer')}
                   onLongPress={onLongPressCard}
@@ -264,13 +284,7 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   diaryText: {
-    fontSize: 15,
-    lineHeight: 23,
     fontWeight: '500',
-  },
-  diaryTextLarge: {
-    fontSize: 19,
-    lineHeight: 30,
   },
   diaryInput: {
     padding: 4,
