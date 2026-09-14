@@ -16,6 +16,23 @@ const TEXT_SIZE_SCALE: Record<NonNullable<DiaryEntry['textSize']>, number> = {
   large: 1.2,
 };
 
+// How close (in on-screen pixels) a drag has to get to a guide before it
+// snaps — Instagram/PowerPoint-style magnetic alignment.
+const SNAP_PX = 8;
+
+function snapAxis(raw: number, candidates: number[], threshold: number): number | null {
+  let best: number | null = null;
+  let bestDist = threshold;
+  for (const c of candidates) {
+    const d = Math.abs(raw - c);
+    if (d < bestDist) {
+      bestDist = d;
+      best = c;
+    }
+  }
+  return best;
+}
+
 type Props = {
   entry: DiaryEntry;
   editing?: boolean;
@@ -83,6 +100,33 @@ const DiaryCard = forwardRef<View, Props>(
       const { width, height } = e.nativeEvent.layout;
       setCardSize({ width, height });
     };
+
+    // Guide lines currently "lit up" mid-drag, in card-fraction coordinates.
+    const [guides, setGuides] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
+
+    const handleStickerDragUpdate = (instanceId: string, rawX: number, rawY: number) => {
+      const others = (entry.stickers ?? []).filter((s) => s.instanceId !== instanceId);
+      if (cardSize.width === 0 || cardSize.height === 0) return { x: rawX, y: rawY };
+
+      // Snap to: the card's own center (Instagram-style), each other
+      // sticker's center (lining up rows/columns, PowerPoint-style), and the
+      // midpoint between any two other stickers (even spacing between three).
+      const xCandidates = [0.5, ...others.map((s) => s.x)];
+      const yCandidates = [0.5, ...others.map((s) => s.y)];
+      for (let i = 0; i < others.length; i++) {
+        for (let j = i + 1; j < others.length; j++) {
+          xCandidates.push((others[i].x + others[j].x) / 2);
+          yCandidates.push((others[i].y + others[j].y) / 2);
+        }
+      }
+
+      const snappedX = snapAxis(rawX, xCandidates, SNAP_PX / cardSize.width);
+      const snappedY = snapAxis(rawY, yCandidates, SNAP_PX / cardSize.height);
+      setGuides({ x: snappedX, y: snappedY });
+      return { x: snappedX ?? rawX, y: snappedY ?? rawY };
+    };
+
+    const handleStickerDragEnd = () => setGuides({ x: null, y: null });
 
     const hasPhoto = !!entry.backgroundImageUri;
     const hasIllustration = !!entry.illustration && !hasPhoto;
@@ -219,8 +263,21 @@ const DiaryCard = forwardRef<View, Props>(
                 interactive={!!onChangeSticker}
                 onChange={(patch) => onChangeSticker?.(placed.instanceId, patch)}
                 onLongPressDelete={() => onDeleteSticker?.(placed.instanceId)}
+                onDragUpdate={onChangeSticker ? handleStickerDragUpdate : undefined}
+                onDragEnd={onChangeSticker ? handleStickerDragEnd : undefined}
               />
             ))}
+          </View>
+        )}
+
+        {(guides.x !== null || guides.y !== null) && (
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            {guides.x !== null && (
+              <View style={[styles.guideLineV, { left: guides.x * cardSize.width }]} />
+            )}
+            {guides.y !== null && (
+              <View style={[styles.guideLineH, { top: guides.y * cardSize.height }]} />
+            )}
           </View>
         )}
       </View>
@@ -305,5 +362,19 @@ const styles = StyleSheet.create({
   tag: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  guideLineV: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: '#FF3B78',
+  },
+  guideLineH: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: '#FF3B78',
   },
 });

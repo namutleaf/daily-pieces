@@ -11,6 +11,11 @@ type Props = {
   interactive: boolean;
   onChange: (patch: Pick<PlacedSticker, 'x' | 'y' | 'scale' | 'rotation'>) => void;
   onLongPressDelete?: () => void;
+  // Called with this sticker's raw (unsnapped) position on every pan update;
+  // returns the position to actually use, letting the parent pull it onto a
+  // magnetic guide (card center, another sticker, or an even-spacing point).
+  onDragUpdate?: (instanceId: string, rawX: number, rawY: number) => { x: number; y: number };
+  onDragEnd?: (instanceId: string) => void;
 };
 
 const BASE_SIZE = 40;
@@ -28,6 +33,8 @@ export default function DraggableSticker({
   interactive,
   onChange,
   onLongPressDelete,
+  onDragUpdate,
+  onDragEnd,
 }: Props) {
   const sticker = findStickerById(placed.stickerId);
   const [pressed, setPressed] = useState(false);
@@ -58,14 +65,14 @@ export default function DraggableSticker({
       basePan.current = { x: liveRef.current.x, y: liveRef.current.y };
     })
     .onUpdate((e) => {
-      setLive((prev) => ({
-        ...prev,
-        x: clamp(basePan.current.x + e.translationX / cardWidth, 0, 1),
-        y: clamp(basePan.current.y + e.translationY / cardHeight, 0, 1),
-      }));
+      const rawX = clamp(basePan.current.x + e.translationX / cardWidth, 0, 1);
+      const rawY = clamp(basePan.current.y + e.translationY / cardHeight, 0, 1);
+      const snapped = onDragUpdate?.(placed.instanceId, rawX, rawY) ?? { x: rawX, y: rawY };
+      setLive((prev) => ({ ...prev, x: snapped.x, y: snapped.y }));
     })
     .onFinalize(() => {
       draggingRef.current = false;
+      onDragEnd?.(placed.instanceId);
       commit();
     });
 
