@@ -6,6 +6,7 @@ import { RootStackParamList } from '../navigation/types';
 import { theme } from '../theme';
 import { getNotifPref, setNotifPref, applyNotificationSchedule, NotifPref } from '../utils/notifications';
 import { getLockEnabled, setLockEnabled, checkLockSupport } from '../utils/lock';
+import { exportEntries, importEntries } from '../utils/backup';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -15,6 +16,7 @@ export default function SettingsScreen({ navigation }: Props) {
   const [notif, setNotif] = useState<NotifPref>({ enabled: false, hour: 21, minute: 0 });
   const [lockEnabled, setLockEnabledState] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [backupBusy, setBackupBusy] = useState(false);
 
   useEffect(() => {
     Promise.all([getNotifPref(), getLockEnabled()]).then(([pref, lock]) => {
@@ -63,6 +65,46 @@ export default function SettingsScreen({ navigation }: Props) {
     }
     setLockEnabledState(enabled);
     await setLockEnabled(enabled);
+  };
+
+  const handleExport = async () => {
+    setBackupBusy(true);
+    try {
+      const result = await exportEntries();
+      if (!result.ok) {
+        if (result.reason === 'web-unsupported') {
+          Alert.alert('내보내기는 앱에서만', '웹 미리보기에서는 파일을 내보낼 수 없어요. 실제 기기에서 확인해주세요.');
+        } else if (result.reason === 'no-entries') {
+          Alert.alert('내보낼 일기가 없어요', '먼저 오늘의 조각을 모아보세요.');
+        } else if (result.reason === 'share-unavailable') {
+          Alert.alert('공유 불가', '이 기기에서는 파일 공유 기능을 사용할 수 없어요.');
+        } else {
+          Alert.alert('내보내기 실패', '백업 파일을 만들지 못했어요. 다시 시도해주세요.');
+        }
+      }
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handleImport = async () => {
+    setBackupBusy(true);
+    try {
+      const result = await importEntries();
+      if (result.ok) {
+        Alert.alert('가져오기 완료', `${result.added}개의 일기를 새로 불러왔어요.`);
+      } else if (result.reason === 'web-unsupported') {
+        Alert.alert('가져오기는 앱에서만', '웹 미리보기에서는 파일을 가져올 수 없어요. 실제 기기에서 확인해주세요.');
+      } else if (result.reason === 'canceled') {
+        // user backed out of the file picker — nothing to say
+      } else if (result.reason === 'invalid-file') {
+        Alert.alert('가져오기 실패', '이 파일은 Daily Pieces 백업 파일이 아닌 것 같아요.');
+      } else {
+        Alert.alert('가져오기 실패', '파일을 불러오지 못했어요. 다시 시도해주세요.');
+      }
+    } finally {
+      setBackupBusy(false);
+    }
   };
 
   return (
@@ -127,6 +169,29 @@ export default function SettingsScreen({ navigation }: Props) {
               ? '지문/얼굴 인식은 실제 기기에서만 사용할 수 있어요.'
               : '앱을 열 때마다 지문 또는 얼굴 인식으로 잠금을 해제해요.'}
           </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>데이터 백업</Text>
+          <Text style={styles.sectionHint}>
+            일기를 파일로 내보내 보관하거나, 백업 파일에서 다시 불러올 수 있어요.
+          </Text>
+          <View style={styles.backupRow}>
+            <Pressable
+              style={({ pressed }) => [styles.backupBtn, pressed && styles.pressed]}
+              onPress={handleExport}
+              disabled={backupBusy}
+            >
+              <Text style={styles.backupBtnText}>내보내기</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.backupBtn, pressed && styles.pressed]}
+              onPress={handleImport}
+              disabled={backupBusy}
+            >
+              <Text style={styles.backupBtnText}>가져오기</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -226,5 +291,25 @@ const styles = StyleSheet.create({
   },
   hourChipTextActive: {
     color: '#fff',
+  },
+  backupRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  backupBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: theme.accentSoft,
+  },
+  backupBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.accent,
+  },
+  pressed: {
+    opacity: 0.8,
   },
 });

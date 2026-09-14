@@ -1,11 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { composeDiaryText } from './generateDiary';
-import { DiaryEntry, LineKey, PaletteKey, PlacedSticker, ToneKey } from '../types';
+import { CategoryKey, DiaryEntry, LineKey, PaletteKey, PlacedSticker, ToneKey, WordItem } from '../types';
 import { FontKey } from '../data/fonts';
 
 const KEY = 'daily_pieces_entries_v1';
 const NAMES_KEY = 'daily_pieces_last_names_v1';
 const FONT_KEY = 'daily_pieces_font_pref_v1';
+const CUSTOM_WORDS_KEY = 'daily_pieces_custom_words_v1';
 
 export async function loadEntries(): Promise<DiaryEntry[]> {
   try {
@@ -28,6 +29,24 @@ export async function removeEntry(id: string): Promise<void> {
   const entries = await loadEntries();
   const next = entries.filter((e) => e.id !== id);
   await AsyncStorage.setItem(KEY, JSON.stringify(next));
+}
+
+// Overwrites the whole entry list at once — used by backup import, where
+// entries arrive as a batch rather than one at a time.
+export async function replaceAllEntries(entries: DiaryEntry[]): Promise<void> {
+  await AsyncStorage.setItem(KEY, JSON.stringify(entries));
+}
+
+export async function updateEntryLock(id: string, locked: boolean): Promise<DiaryEntry | null> {
+  const entries = await loadEntries();
+  let updated: DiaryEntry | null = null;
+  const next = entries.map((e) => {
+    if (e.id !== id) return e;
+    updated = { ...e, locked };
+    return updated;
+  });
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+  return updated;
 }
 
 // Merges one or more final (already-toned) line texts into an entry's
@@ -156,4 +175,31 @@ export async function setLastName(wordId: string, name: string): Promise<void> {
   } catch {
     // best-effort only
   }
+}
+
+// User-added word cards, layered on top of the built-in categories in
+// src/data/words.ts without touching that static data.
+type CustomWordsMap = Partial<Record<CategoryKey, WordItem[]>>;
+
+export async function getCustomWords(): Promise<CustomWordsMap> {
+  try {
+    const raw = await AsyncStorage.getItem(CUSTOM_WORDS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function addCustomWord(categoryKey: CategoryKey, word: WordItem): Promise<void> {
+  const map = await getCustomWords();
+  const list = map[categoryKey] ?? [];
+  map[categoryKey] = [...list, word];
+  await AsyncStorage.setItem(CUSTOM_WORDS_KEY, JSON.stringify(map));
+}
+
+export async function removeCustomWord(categoryKey: CategoryKey, wordId: string): Promise<void> {
+  const map = await getCustomWords();
+  const list = map[categoryKey] ?? [];
+  map[categoryKey] = list.filter((w) => w.id !== wordId);
+  await AsyncStorage.setItem(CUSTOM_WORDS_KEY, JSON.stringify(map));
 }
