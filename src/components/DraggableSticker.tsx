@@ -130,7 +130,10 @@ export default function DraggableSticker({
         {
           left: live.x * cardWidth - size / 2,
           top: live.y * cardHeight - size / 2,
+          width: size,
+          height: size,
           fontSize: size,
+          lineHeight: size,
           transform: [{ rotate: `${live.rotation}deg` }],
         },
       ]}
@@ -147,6 +150,9 @@ export default function DraggableSticker({
 const styles = StyleSheet.create({
   emoji: {
     position: 'absolute',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
     textShadowColor: 'rgba(0,0,0,0.15)',
     textShadowRadius: 3,
     textShadowOffset: { width: 0, height: 1 },
