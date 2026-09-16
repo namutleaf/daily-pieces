@@ -6,7 +6,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { DiaryEntry } from '../types';
 import { CATEGORIES } from '../data/words';
-import { theme, MOOD_PALETTES } from '../theme';
+import { theme, MOOD_PALETTES, DEFAULT_PALETTE } from '../theme';
 import { loadEntries } from '../utils/storage';
 import {
   computeStreak,
@@ -83,7 +83,7 @@ export default function StatsScreen({ navigation }: Props) {
                       styles.moodStripCell,
                       {
                         backgroundColor: day.paletteKey
-                          ? MOOD_PALETTES[day.paletteKey].colors[0]
+                          ? (MOOD_PALETTES[day.paletteKey] ?? DEFAULT_PALETTE).colors[0]
                           : theme.border,
                       },
                     ]}
@@ -95,7 +95,12 @@ export default function StatsScreen({ navigation }: Props) {
               <View style={styles.moodList}>
                 {moods.map((mood) => (
                   <View key={mood.key} style={styles.moodRow}>
-                    <View style={[styles.moodSwatch, { backgroundColor: MOOD_PALETTES[mood.key].colors[0] }]} />
+                    <View
+                      style={[
+                        styles.moodSwatch,
+                        { backgroundColor: (MOOD_PALETTES[mood.key] ?? DEFAULT_PALETTE).colors[0] },
+                      ]}
+                    />
                     <Text style={styles.moodLabel}>{mood.key}</Text>
                     <View style={styles.moodBarTrack}>
                       <View
@@ -103,7 +108,7 @@ export default function StatsScreen({ navigation }: Props) {
                           styles.moodBarFill,
                           {
                             width: `${(mood.count / maxMoodCount) * 100}%`,
-                            backgroundColor: MOOD_PALETTES[mood.key].colors[1],
+                            backgroundColor: (MOOD_PALETTES[mood.key] ?? DEFAULT_PALETTE).colors[1],
                           },
                         ]}
                       />
