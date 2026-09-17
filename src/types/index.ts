@@ -62,6 +62,10 @@ export type DiaryEntry = {
   tone: ToneKey;
   diaryText: string;
   hashtags: string[];
+  // Per-category replacement for a hashtag, from tapping it and either
+  // picking one of that word's variant labels or typing something new.
+  // Undefined for a category means "use the auto-generated tag."
+  hashtagOverrides?: Partial<Record<CategoryKey, string>>;
   paletteKey: PaletteKey;
   // User-chosen background (via long-press on the card), overriding the
   // mood-derived paletteKey. Undefined means "use the mood's own color."

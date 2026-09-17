@@ -76,6 +76,23 @@ export async function updateLineOverrides(
   return updated;
 }
 
+// Merges one or more hashtag replacements into an entry — from tapping a
+// hashtag and either picking a variant label or typing a custom tag.
+export async function updateHashtagOverrides(
+  id: string,
+  patch: Partial<Record<CategoryKey, string>>
+): Promise<DiaryEntry | null> {
+  const entries = await loadEntries();
+  let updated: DiaryEntry | null = null;
+  const next = entries.map((e) => {
+    if (e.id !== id) return e;
+    updated = { ...e, hashtagOverrides: { ...e.hashtagOverrides, ...patch } };
+    return updated;
+  });
+  await AsyncStorage.setItem(KEY, JSON.stringify(next));
+  return updated;
+}
+
 // Used once, right when a diary is created: the user's own typed sentence
 // sets the tone for the whole entry, and is appended as its own line.
 export async function applyCustomLineAndTone(

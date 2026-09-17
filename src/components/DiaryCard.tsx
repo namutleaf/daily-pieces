@@ -3,10 +3,11 @@ import { Image, LayoutChangeEvent, Pressable, StyleSheet, Text, TextInput, View 
 import { LinearGradient } from 'expo-linear-gradient';
 import { CATEGORIES } from '../data/words';
 import DraggableSticker from './DraggableSticker';
+import GuideLine from './GuideLine';
 import IllustrationBackground from './IllustrationBackground';
-import { DiaryEntry, LineKey, PlacedSticker } from '../types';
+import { CategoryKey, DiaryEntry, LineKey, PlacedSticker } from '../types';
 import { MOOD_PALETTES, DEFAULT_PALETTE } from '../theme';
-import { lineFinalText } from '../utils/generateDiary';
+import { effectiveHashtags, lineFinalText } from '../utils/generateDiary';
 
 const ALL_LINE_KEYS: LineKey[] = [...CATEGORIES.map((c) => c.key), 'closer'];
 
@@ -21,6 +22,12 @@ const TEXT_SIZE_SCALE: Record<NonNullable<DiaryEntry['textSize']>, number> = {
 const SNAP_PX = 8;
 
 type SnapCandidate = { value: number; kind: 'center' | 'align' };
+
+// Snapped to the card's own center (Instagram-style) vs. lined up with
+// another sticker (PowerPoint-style) — distinct colors so it's clear which
+// guide fired.
+const GUIDE_COLOR_CENTER = '#2F5FE0';
+const GUIDE_COLOR_ALIGN = '#FF3B78';
 
 // The closest candidate within threshold wins, same as any smart-guide
 // implementation — the card center is just one entry in the list, not a
@@ -45,6 +52,7 @@ type Props = {
   draftLines?: Partial<Record<LineKey, string>>;
   onChangeLine?: (key: LineKey, text: string) => void;
   onPressLine?: (key: LineKey) => void;
+  onPressHashtag?: (key: CategoryKey, currentTag: string) => void;
   onLongPressCard?: () => void;
   large?: boolean;
   fontFamily?: string;
@@ -93,6 +101,7 @@ const DiaryCard = forwardRef<View, Props>(
       draftLines,
       onChangeLine,
       onPressLine,
+      onPressHashtag,
       onLongPressCard,
       large,
       fontFamily,
@@ -262,11 +271,22 @@ const DiaryCard = forwardRef<View, Props>(
           </View>
 
           <View style={[styles.tagsRow, { justifyContent: tagsJustify }]}>
-            {entry.hashtags.map((tag) => (
-              <Text key={tag} style={[styles.tag, { color: palette.subtext }]}>
-                {tag}
-              </Text>
-            ))}
+            {effectiveHashtags(entry).map(({ key, tag }) =>
+              onPressHashtag ? (
+                <Pressable
+                  key={key}
+                  onPress={() => onPressHashtag(key, tag)}
+                  hitSlop={4}
+                  style={({ pressed }) => pressed && styles.linePressed}
+                >
+                  <Text style={[styles.tag, { color: palette.subtext }]}>{tag}</Text>
+                </Pressable>
+              ) : (
+                <Text key={key} style={[styles.tag, { color: palette.subtext }]}>
+                  {tag}
+                </Text>
+              )
+            )}
           </View>
         </Pressable>
 
@@ -291,22 +311,24 @@ const DiaryCard = forwardRef<View, Props>(
         {(guides.x !== null || guides.y !== null) && (
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             {guides.x !== null && (
-              <View
-                style={[
-                  styles.guideLineV,
-                  { left: guides.x.value * cardSize.width },
-                  guides.x.kind === 'center' ? styles.guideLineCenter : styles.guideLineAlign,
-                ]}
-              />
+              <View style={{ position: 'absolute', left: guides.x.value * cardSize.width - 1.5, top: 0 }}>
+                <GuideLine
+                  orientation="vertical"
+                  length={cardSize.height}
+                  color={guides.x.kind === 'center' ? GUIDE_COLOR_CENTER : GUIDE_COLOR_ALIGN}
+                  gradientId={guides.x.kind === 'center' ? 'guide-center-v' : 'guide-align-v'}
+                />
+              </View>
             )}
             {guides.y !== null && (
-              <View
-                style={[
-                  styles.guideLineH,
-                  { top: guides.y.value * cardSize.height },
-                  guides.y.kind === 'center' ? styles.guideLineCenter : styles.guideLineAlign,
-                ]}
-              />
+              <View style={{ position: 'absolute', top: guides.y.value * cardSize.height - 1.5, left: 0 }}>
+                <GuideLine
+                  orientation="horizontal"
+                  length={cardSize.width}
+                  color={guides.y.kind === 'center' ? GUIDE_COLOR_CENTER : GUIDE_COLOR_ALIGN}
+                  gradientId={guides.y.kind === 'center' ? 'guide-center-h' : 'guide-align-h'}
+                />
+              </View>
             )}
           </View>
         )}
@@ -392,26 +414,5 @@ const styles = StyleSheet.create({
   tag: {
     fontSize: 12,
     fontWeight: '600',
-  },
-  guideLineV: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 1,
-  },
-  guideLineH: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-  },
-  // Snapped to the card's own center (Instagram-style) — a distinct color
-  // from sticker-to-sticker alignment so it's clear which one fired.
-  guideLineCenter: {
-    backgroundColor: '#2F5FE0',
-  },
-  // Lined up (or evenly spaced) with another sticker (PowerPoint-style).
-  guideLineAlign: {
-    backgroundColor: '#FF3B78',
   },
 });

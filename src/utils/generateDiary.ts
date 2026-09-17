@@ -77,6 +77,18 @@ export function composeDiaryText(
   return parts.join('\n');
 }
 
+// Hashtags are generated once at creation time, aligned by index with
+// CATEGORIES — this pairs each with the category it came from (needed to
+// look up alternate labels) and lets a per-category override replace it.
+export function effectiveHashtags(
+  entry: Pick<DiaryEntry, 'hashtags' | 'hashtagOverrides'>
+): { key: CategoryKey; tag: string }[] {
+  return CATEGORIES.map((c, i) => ({
+    key: c.key,
+    tag: entry.hashtagOverrides?.[c.key] ?? entry.hashtags[i],
+  })).filter((t) => t.tag !== undefined);
+}
+
 export function buildDiaryEntry(
   selections: Selections,
   tone: ToneKey,

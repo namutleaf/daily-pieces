@@ -8,6 +8,7 @@ import { DiaryEntry } from '../types';
 import { theme } from '../theme';
 import { loadEntries } from '../utils/storage';
 import { authenticate, checkLockSupport } from '../utils/lock';
+import { effectiveHashtags } from '../utils/generateDiary';
 import CalendarGrid from '../components/CalendarGrid';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'History'>;
@@ -35,7 +36,9 @@ export default function HistoryScreen({ navigation }: Props) {
       if (e.dateLabel.includes(q)) return true;
       // A locked entry's content shouldn't be searchable — only its date.
       if (e.locked) return false;
-      return e.diaryText.includes(q) || e.hashtags.some((tag) => tag.includes(q));
+      return (
+        e.diaryText.includes(q) || effectiveHashtags(e).some(({ tag }) => tag.includes(q))
+      );
     });
   }, [entries, query]);
 
@@ -123,7 +126,11 @@ export default function HistoryScreen({ navigation }: Props) {
                     {item.dateLabel}
                   </Text>
                   <Text style={styles.rowTags} numberOfLines={1}>
-                    {item.locked ? '비공개 일기' : item.hashtags.join('  ')}
+                    {item.locked
+                      ? '비공개 일기'
+                      : effectiveHashtags(item)
+                          .map(({ tag }) => tag)
+                          .join('  ')}
                   </Text>
                 </Pressable>
               )}

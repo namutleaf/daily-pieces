@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +20,7 @@ import { RootStackParamList } from '../navigation/types';
 import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
 import DiaryCard from '../components/DiaryCard';
 import IllustrationBackground from '../components/IllustrationBackground';
-import { DiaryEntry, LineKey, PaletteKey, PlacedSticker } from '../types';
+import { CategoryKey, DiaryEntry, LineKey, PaletteKey, PlacedSticker } from '../types';
 import { getFontOption } from '../data/fonts';
 import { ILLUSTRATION_OPTIONS } from '../data/illustrations';
 import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS, StickerItem, StickerPack, isStickerUnlocked } from '../data/stickers';
@@ -37,6 +38,7 @@ import {
   updateTextAlign,
   updateTextSize,
   updateIllustration,
+  updateHashtagOverrides,
 } from '../utils/storage';
 
 const ALIGN_OPTIONS: {
@@ -73,6 +75,8 @@ export default function ResultScreen({ route, navigation }: Props) {
   const [working, setWorking] = useState(false);
   const [pickerKey, setPickerKey] = useState<LineKey | null>(null);
   const [pendingSwap, setPendingSwap] = useState<{ key: LineKey; option: Option } | null>(null);
+  const [hashtagKey, setHashtagKey] = useState<CategoryKey | null>(null);
+  const [hashtagDraft, setHashtagDraft] = useState('');
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const [stickerSheetOpen, setStickerSheetOpen] = useState(false);
   const [fontFamily, setFontFamily] = useState<string | undefined>(undefined);
@@ -278,6 +282,31 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (updated) setEntry(updated);
   };
 
+  const normalizeHashtag = (raw: string): string => {
+    const trimmed = raw.trim().replace(/\s+/g, '');
+    if (!trimmed) return '';
+    return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  };
+
+  const handleOpenHashtagEditor = (key: CategoryKey, currentTag: string) => {
+    setHashtagKey(key);
+    setHashtagDraft(currentTag);
+  };
+
+  const handlePickHashtagOption = (label: string) => {
+    setHashtagDraft(normalizeHashtag(label));
+  };
+
+  const handleSaveHashtag = async () => {
+    if (!hashtagKey) return;
+    const key = hashtagKey;
+    const normalized = normalizeHashtag(hashtagDraft);
+    setHashtagKey(null);
+    if (!normalized) return;
+    const updated = await updateHashtagOverrides(entry.id, { [key]: normalized });
+    if (updated) setEntry(updated);
+  };
+
   const captureImage = async () => {
     if (!cardRef.current) return null;
     return captureRef(cardRef, { format: 'png', quality: 1 });
@@ -341,6 +370,7 @@ export default function ResultScreen({ route, navigation }: Props) {
           ref={cardRef}
           entry={entry}
           onPressLine={(key) => setPickerKey(key)}
+          onPressHashtag={handleOpenHashtagEditor}
           onLongPressCard={() => setBgPickerOpen(true)}
           onChangeSticker={handleStickerChange}
           onDeleteSticker={handleDeleteSticker}
@@ -348,7 +378,7 @@ export default function ResultScreen({ route, navigation }: Props) {
         />
 
         <Text style={styles.hint}>
-          문장을 눌러보면 다른 표현으로, 길게 누르면 배경을 바꿀 수 있어요
+          문장이나 해시태그를 눌러보면 다른 표현으로, 길게 누르면 배경을 바꿀 수 있어요
         </Text>
 
         {deletedSticker && (
@@ -557,6 +587,64 @@ export default function ResultScreen({ route, navigation }: Props) {
             </View>
           </View>
         </View>
+      </Modal>
+
+      <Modal
+        visible={hashtagKey !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setHashtagKey(null)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setHashtagKey(null)}>
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>해시태그를 선택하거나 직접 입력해보세요</Text>
+            {hashtagKey && (
+              <View style={styles.hashtagChipRow}>
+                {getOptions(hashtagKey).map((option) => {
+                  const tag = normalizeHashtag(option.label);
+                  const isSelected = tag === normalizeHashtag(hashtagDraft);
+                  return (
+                    <Pressable
+                      key={option.label}
+                      style={({ pressed }) => [
+                        styles.hashtagChip,
+                        isSelected && styles.hashtagChipActive,
+                        pressed && styles.sheetOptionPressed,
+                      ]}
+                      onPress={() => handlePickHashtagOption(option.label)}
+                    >
+                      <Text style={[styles.hashtagChipText, isSelected && styles.hashtagChipTextActive]}>
+                        {tag}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+            <TextInput
+              style={styles.hashtagInput}
+              value={hashtagDraft}
+              onChangeText={setHashtagDraft}
+              placeholder="예: #오늘의기록"
+              placeholderTextColor={theme.inkSoft}
+              autoFocus
+            />
+            <View style={styles.promptActions}>
+              <Pressable
+                style={({ pressed }) => [styles.promptBtn, pressed && styles.pressed]}
+                onPress={() => setHashtagKey(null)}
+              >
+                <Text style={styles.promptBtnText}>취소</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.promptBtn, styles.promptBtnPrimary, pressed && styles.pressed]}
+                onPress={handleSaveHashtag}
+              >
+                <Text style={styles.promptBtnPrimaryText}>완료</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
       </Modal>
 
       <Modal
@@ -868,6 +956,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.inkSoft,
     textAlign: 'center',
+  },
+  hashtagChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  hashtagChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: theme.bg,
+  },
+  hashtagChipActive: {
+    backgroundColor: theme.accentSoft,
+  },
+  hashtagChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.inkSoft,
+  },
+  hashtagChipTextActive: {
+    color: theme.accent,
+  },
+  hashtagInput: {
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: theme.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.ink,
+    marginBottom: 14,
   },
   confirmBackdrop: {
     flex: 1,
