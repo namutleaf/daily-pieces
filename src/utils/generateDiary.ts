@@ -8,6 +8,8 @@ export const CLOSER_OPTIONS = [
   { label: '조용히 지나갔다', fragment: '오늘 하루도 이렇게 조용히 지나갔다' },
   { label: '나쁘지 않았다', fragment: '이런 하루도 나쁘지 않았다' },
   { label: '내일이 궁금하다', fragment: '내일은 또 어떤 조각이 모일지 궁금했다' },
+  { label: '수고했어', fragment: '오늘 하루도 수고 많았다' },
+  { label: '기억에 남다', fragment: '오래도록 기억에 남을 하루였다' },
 ];
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];

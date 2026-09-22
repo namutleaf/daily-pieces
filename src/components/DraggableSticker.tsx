@@ -18,7 +18,9 @@ type Props = {
   onDragEnd?: (instanceId: string) => void;
 };
 
-const BASE_SIZE = 40;
+// Exported so DiaryCard can compute each sticker's on-screen edges for
+// edge-to-edge alignment guides, without duplicating the size constant.
+export const BASE_SIZE = 40;
 const MIN_SCALE = 0.4;
 const MAX_SCALE = 3;
 

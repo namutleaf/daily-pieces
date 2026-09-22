@@ -24,7 +24,13 @@ import { CategoryKey, DiaryEntry, LineKey, PaletteKey, PlacedSticker } from '../
 import { getFontOption } from '../data/fonts';
 import { ILLUSTRATION_OPTIONS } from '../data/illustrations';
 import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS, StickerItem, StickerPack, isStickerUnlocked } from '../data/stickers';
-import { applyTone, CLOSER_OPTIONS, defaultBaseFragment, lineFinalText } from '../utils/generateDiary';
+import {
+  applyTone,
+  CLOSER_OPTIONS,
+  defaultBaseFragment,
+  effectiveHashtags,
+  lineFinalText,
+} from '../utils/generateDiary';
 import { getUnlockedMilestones } from '../utils/milestones';
 import { checkLockSupport, authenticate } from '../utils/lock';
 import {
@@ -80,7 +86,16 @@ export default function ResultScreen({ route, navigation }: Props) {
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const [stickerSheetOpen, setStickerSheetOpen] = useState(false);
   const [fontFamily, setFontFamily] = useState<string | undefined>(undefined);
-  const [deletedSticker, setDeletedSticker] = useState<PlacedSticker | null>(null);
+  // A single generic "undo" toast reused for sticker deletion, sentence
+  // swaps, and hashtag edits — whichever fired last wins the slot, same as
+  // any one-at-a-time undo affordance (Gmail, Photos, etc.). Storing what to
+  // revert (not a captured closure) means undo always acts on the entry's
+  // current state, even if something else changed while the toast was up.
+  type UndoAction =
+    | { type: 'sticker'; sticker: PlacedSticker }
+    | { type: 'line'; key: LineKey; previousText: string }
+    | { type: 'hashtag'; key: CategoryKey; previousTag: string };
+  const [undoAction, setUndoAction] = useState<{ message: string; action: UndoAction } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [unlockedMilestones, setUnlockedMilestones] = useState<number[]>([]);
 
@@ -181,6 +196,30 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (updated) setEntry(updated);
   };
 
+  const showUndo = (message: string, action: UndoAction) => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setUndoAction({ message, action });
+    undoTimerRef.current = setTimeout(() => setUndoAction(null), 3000);
+  };
+
+  const handleUndo = async () => {
+    if (!undoAction) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    const { action } = undoAction;
+    setUndoAction(null);
+    if (action.type === 'sticker') {
+      const current = entry.stickers ?? [];
+      const updated = await updateStickers(entry.id, [...current, action.sticker]);
+      if (updated) setEntry(updated);
+    } else if (action.type === 'line') {
+      const updated = await updateLineOverrides(entry.id, { [action.key]: action.previousText });
+      if (updated) setEntry(updated);
+    } else {
+      const updated = await updateHashtagOverrides(entry.id, { [action.key]: action.previousTag });
+      if (updated) setEntry(updated);
+    }
+  };
+
   const handleDeleteSticker = async (instanceId: string) => {
     const current = entry.stickers ?? [];
     const removed = current.find((s) => s.instanceId === instanceId);
@@ -189,19 +228,7 @@ export default function ResultScreen({ route, navigation }: Props) {
     const updated = await updateStickers(entry.id, next);
     if (updated) setEntry(updated);
 
-    setDeletedSticker(removed);
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    undoTimerRef.current = setTimeout(() => setDeletedSticker(null), 3000);
-  };
-
-  const handleUndoDeleteSticker = async () => {
-    if (!deletedSticker) return;
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    const restored = deletedSticker;
-    setDeletedSticker(null);
-    const current = entry.stickers ?? [];
-    const updated = await updateStickers(entry.id, [...current, restored]);
-    if (updated) setEntry(updated);
+    showUndo('스티커를 삭제했어요', { type: 'sticker', sticker: removed });
   };
 
   const handleToggleEntryLock = async () => {
@@ -276,10 +303,14 @@ export default function ResultScreen({ route, navigation }: Props) {
   const handleConfirmSwap = async () => {
     if (!pendingSwap) return;
     const { key, option } = pendingSwap;
+    const previousText = getCurrentFinalText(key);
     setPendingSwap(null);
     const toned = applyTone(option.fragment, entry.tone);
     const updated = await updateLineOverrides(entry.id, { [key]: toned });
-    if (updated) setEntry(updated);
+    if (updated) {
+      setEntry(updated);
+      showUndo('문장을 바꿨어요', { type: 'line', key, previousText });
+    }
   };
 
   const normalizeHashtag = (raw: string): string => {
@@ -301,10 +332,40 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (!hashtagKey) return;
     const key = hashtagKey;
     const normalized = normalizeHashtag(hashtagDraft);
+    if (!normalized) {
+      setHashtagKey(null);
+      return;
+    }
+    const currentTags = effectiveHashtags(entry);
+    const isDuplicate = currentTags.some((t) => t.key !== key && t.tag === normalized);
+    if (isDuplicate) {
+      Alert.alert('이미 쓰고 있는 태그예요', '다른 항목에서 같은 해시태그를 쓰고 있어요. 다른 표현으로 바꿔보세요.');
+      return;
+    }
+    const previousTag = currentTags.find((t) => t.key === key)?.tag;
     setHashtagKey(null);
-    if (!normalized) return;
+    if (normalized === previousTag) return;
     const updated = await updateHashtagOverrides(entry.id, { [key]: normalized });
-    if (updated) setEntry(updated);
+    if (updated) {
+      setEntry(updated);
+      if (previousTag !== undefined) {
+        showUndo('해시태그를 바꿨어요', { type: 'hashtag', key, previousTag });
+      }
+    }
+  };
+
+  const handleResetHashtag = async () => {
+    if (!hashtagKey) return;
+    const key = hashtagKey;
+    const previousTag = effectiveHashtags(entry).find((t) => t.key === key)?.tag;
+    setHashtagKey(null);
+    const updated = await updateHashtagOverrides(entry.id, { [key]: undefined });
+    if (updated) {
+      setEntry(updated);
+      if (previousTag !== undefined) {
+        showUndo('기본 해시태그로 되돌렸어요', { type: 'hashtag', key, previousTag });
+      }
+    }
   };
 
   const captureImage = async () => {
@@ -381,10 +442,10 @@ export default function ResultScreen({ route, navigation }: Props) {
           문장이나 해시태그를 눌러보면 다른 표현으로, 길게 누르면 배경을 바꿀 수 있어요
         </Text>
 
-        {deletedSticker && (
+        {undoAction && (
           <View style={styles.undoToast}>
-            <Text style={styles.undoToastText}>스티커를 삭제했어요</Text>
-            <Pressable onPress={handleUndoDeleteSticker} hitSlop={8}>
+            <Text style={styles.undoToastText}>{undoAction.message}</Text>
+            <Pressable onPress={handleUndo} hitSlop={8}>
               <Text style={styles.undoToastAction}>되돌리기</Text>
             </Pressable>
           </View>
@@ -629,6 +690,11 @@ export default function ResultScreen({ route, navigation }: Props) {
               placeholderTextColor={theme.inkSoft}
               autoFocus
             />
+            {hashtagKey && entry.hashtagOverrides?.[hashtagKey] !== undefined && (
+              <Pressable onPress={handleResetHashtag} hitSlop={8} style={styles.hashtagResetBtn}>
+                <Text style={styles.hashtagResetText}>기본값으로 되돌리기</Text>
+              </Pressable>
+            )}
             <View style={styles.promptActions}>
               <Pressable
                 style={({ pressed }) => [styles.promptBtn, pressed && styles.pressed]}
@@ -991,6 +1057,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.ink,
     marginBottom: 14,
+  },
+  hashtagResetBtn: {
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  hashtagResetText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.inkSoft,
+    textDecorationLine: 'underline',
   },
   confirmBackdrop: {
     flex: 1,

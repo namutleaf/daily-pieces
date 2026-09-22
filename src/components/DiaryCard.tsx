@@ -2,7 +2,7 @@ import React, { forwardRef, useState } from 'react';
 import { Image, LayoutChangeEvent, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CATEGORIES } from '../data/words';
-import DraggableSticker from './DraggableSticker';
+import DraggableSticker, { BASE_SIZE as STICKER_BASE_SIZE } from './DraggableSticker';
 import GuideLine from './GuideLine';
 import IllustrationBackground from './IllustrationBackground';
 import { CategoryKey, DiaryEntry, LineKey, PlacedSticker } from '../types';
@@ -126,20 +126,33 @@ const DiaryCard = forwardRef<View, Props>(
       const others = (entry.stickers ?? []).filter((s) => s.instanceId !== instanceId);
       if (cardSize.width === 0 || cardSize.height === 0) return { x: rawX, y: rawY };
 
+      // The dragged sticker's own half-size (in card-fraction units) is
+      // needed to line up EDGES rather than just centers — its center has
+      // to land somewhere offset from the other sticker's edge, not on it.
+      const draggedScale = entry.stickers?.find((s) => s.instanceId === instanceId)?.scale ?? 1;
+      const draggedHalfW = (STICKER_BASE_SIZE * draggedScale) / 2 / cardSize.width;
+      const draggedHalfH = (STICKER_BASE_SIZE * draggedScale) / 2 / cardSize.height;
+
       // Snap to: the card's own center (Instagram-style), each other
-      // sticker's center (lining up rows/columns, PowerPoint-style), and the
-      // midpoint between any two other stickers (even spacing between three).
-      // The closest one wins, so dragging near an existing row of stickers
-      // lines up with THEM rather than jumping back to card-center — the
-      // two are drawn in different colors so it's clear which one fired.
-      const xCandidates: SnapCandidate[] = [
-        { value: 0.5, kind: 'center' },
-        ...others.map((s) => ({ value: s.x, kind: 'align' as const })),
-      ];
-      const yCandidates: SnapCandidate[] = [
-        { value: 0.5, kind: 'center' },
-        ...others.map((s) => ({ value: s.y, kind: 'align' as const })),
-      ];
+      // sticker's center or matching edge (lining up rows/columns or flush
+      // left/right/top/bottom, PowerPoint-style), and the midpoint between
+      // any two other stickers (even spacing between three). The closest
+      // one wins, so dragging near an existing row of stickers lines up
+      // with THEM rather than jumping back to card-center — center and
+      // edge/spacing guides are drawn in different colors so it's clear
+      // which one fired.
+      const xCandidates: SnapCandidate[] = [{ value: 0.5, kind: 'center' }];
+      const yCandidates: SnapCandidate[] = [{ value: 0.5, kind: 'center' }];
+      others.forEach((s) => {
+        const otherHalfW = (STICKER_BASE_SIZE * s.scale) / 2 / cardSize.width;
+        const otherHalfH = (STICKER_BASE_SIZE * s.scale) / 2 / cardSize.height;
+        xCandidates.push({ value: s.x, kind: 'align' });
+        xCandidates.push({ value: s.x - otherHalfW + draggedHalfW, kind: 'align' }); // left edges flush
+        xCandidates.push({ value: s.x + otherHalfW - draggedHalfW, kind: 'align' }); // right edges flush
+        yCandidates.push({ value: s.y, kind: 'align' });
+        yCandidates.push({ value: s.y - otherHalfH + draggedHalfH, kind: 'align' }); // top edges flush
+        yCandidates.push({ value: s.y + otherHalfH - draggedHalfH, kind: 'align' }); // bottom edges flush
+      });
       for (let i = 0; i < others.length; i++) {
         for (let j = i + 1; j < others.length; j++) {
           xCandidates.push({ value: (others[i].x + others[j].x) / 2, kind: 'align' });

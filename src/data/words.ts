@@ -15,6 +15,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '쨍쨍하게', fragment: '구름 한 점 없이 쨍쨍했다' },
           { label: '눈부시게', fragment: '햇살이 눈부시게 쏟아졌다' },
+          { label: '파란 하늘', fragment: '파란 하늘이 끝없이 펼쳐졌다' },
+          { label: '기분 좋은 날씨', fragment: '날씨가 좋아 기분까지 맑아졌다' },
         ],
       },
       {
@@ -25,6 +27,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '우중충하게', fragment: '하늘이 우중충하게 가라앉았다' },
           { label: '비 올 듯', fragment: '금방이라도 비가 쏟아질 듯했다' },
+          { label: '잿빛 하늘', fragment: '하늘이 온통 잿빛이었다' },
+          { label: '우울한 분위기', fragment: '흐린 날씨에 마음도 가라앉았다' },
         ],
       },
       {
@@ -35,6 +39,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '부슬부슬', fragment: '부슬비가 조용히 내렸다' },
           { label: '장대비', fragment: '장대비가 세차게 쏟아졌다' },
+          { label: '빗소리', fragment: '창밖으로 빗소리가 하루 종일 들렸다' },
+          { label: '우산 챙김', fragment: '우산을 챙겨 나온 게 다행이었다' },
         ],
       },
       {
@@ -45,6 +51,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '흩날리다', fragment: '눈발이 흩날렸다' },
           { label: '함박눈', fragment: '함박눈이 펑펑 내렸다' },
+          { label: '눈사람', fragment: '눈사람을 만들며 동심에 젖었다' },
+          { label: '발자국', fragment: '새하얀 눈밭에 발자국을 남겼다' },
         ],
       },
       {
@@ -55,6 +63,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '세찬 바람', fragment: '세찬 바람이 휘몰아쳤다' },
           { label: '산들바람', fragment: '산들바람이 살랑였다' },
+          { label: '옷깃을 여밈', fragment: '옷깃을 여미게 하는 바람이 불었다' },
+          { label: '시원한 바람', fragment: '더위를 식혀주는 시원한 바람이 불었다' },
         ],
       },
       {
@@ -65,6 +75,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '쌍무지개', fragment: '쌍무지개가 하늘을 수놓았다' },
           { label: '희미하게', fragment: '무지개가 희미하게 걸렸다' },
+          { label: '행운의 징조', fragment: '무지개를 보고 왠지 좋은 일이 생길 것 같았다' },
+          { label: '사진으로 남김', fragment: '무지개를 놓칠세라 서둘러 사진을 찍었다' },
         ],
       },
       {
@@ -75,6 +87,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '쏟아질 듯', fragment: '별들이 쏟아질 듯 빛났다' },
           { label: '은하수', fragment: '은하수가 길게 흘렀다' },
+          { label: '소원 빌기', fragment: '별똥별을 보며 소원을 빌었다' },
+          { label: '고요한 밤하늘', fragment: '고요한 밤하늘을 한참 올려다봤다' },
         ],
       },
       {
@@ -85,6 +99,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '자욱하게', fragment: '안개가 자욱하게 깔렸다' },
           { label: '몽환적으로', fragment: '거리가 몽환적으로 흐려졌다' },
+          { label: '앞이 흐릿함', fragment: '안개 때문에 앞이 잘 보이지 않았다' },
+          { label: '신비로운 풍경', fragment: '안개 낀 풍경이 묘하게 신비로웠다' },
         ],
       },
       {
@@ -95,6 +111,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '숨 막히는 더위', fragment: '숨 막히는 더위가 이어졌다' },
           { label: '에어컨 필수', fragment: '에어컨 없이는 버티기 힘들었다' },
+          { label: '아이스크림 필수', fragment: '더위를 이기려 아이스크림을 사 먹었다' },
+          { label: '그늘을 찾음', fragment: '조금이라도 시원한 그늘을 찾아다녔다' },
         ],
       },
       {
@@ -105,6 +123,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '갑자기 흠뻑', fragment: '갑작스러운 비에 흠뻑 젖었다' },
           { label: '더위 식힘', fragment: '소나기 덕에 더위가 한풀 꺾였다' },
+          { label: '처마 밑 피신', fragment: '처마 밑으로 급히 몸을 피했다' },
+          { label: '비 갠 뒤 상쾌함', fragment: '소나기가 그치자 공기가 상쾌해졌다' },
         ],
       },
       {
@@ -115,6 +135,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '촉촉하게', fragment: '촉촉하게 이슬비가 스며들었다' },
           { label: '우산 없이도', fragment: '우산 없이도 걸을 만했다' },
+          { label: '우산 없이 산책', fragment: '우산 없이 이슬비를 맞으며 걸었다' },
+          { label: '창문에 맺힌 물방울', fragment: '창문에 작은 물방울이 송골송골 맺혔다' },
         ],
       },
       {
@@ -125,6 +147,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '차가운 아침', fragment: '아침 공기가 유난히 차가웠다' },
           { label: '겨울 예감', fragment: '겨울이 성큼 다가온 것 같았다' },
+          { label: '하얗게 뒤덮인 풀잎', fragment: '풀잎마다 하얀 서리가 내려앉았다' },
+          { label: '두꺼운 옷을 꺼냄', fragment: '겨울 옷을 서둘러 꺼내 입었다' },
         ],
       },
       {
@@ -135,6 +159,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '주황빛으로', fragment: '하늘이 온통 주황빛으로 물들었다' },
           { label: '한참을 바라봄', fragment: '노을을 한참 동안 바라봤다' },
+          { label: '사진에 담음', fragment: '노을 지는 하늘을 사진에 담았다' },
+          { label: '마음이 물듦', fragment: '붉은 노을에 마음까지 물드는 듯했다' },
         ],
       },
       {
@@ -145,6 +171,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '금세 어두워짐', fragment: '하늘이 금세 어두워졌다' },
           { label: '멀리서 천둥', fragment: '천둥소리가 멀리서 들려왔다' },
+          { label: '서둘러 귀가', fragment: '비가 오기 전에 서둘러 집으로 향했다' },
+          { label: '무거운 하늘', fragment: '하늘이 무겁게 내려앉은 것 같았다' },
         ],
       },
       {
@@ -155,6 +183,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '꽃향기 실린', fragment: '꽃향기 실린 바람이 불었다' },
           { label: '외투 없이도', fragment: '겨울 외투를 벗어도 될 만큼 따뜻했다' },
+          { label: '봄기운을 느낌', fragment: '완연한 봄기운이 느껴졌다' },
+          { label: '나른한 오후', fragment: '봄바람에 나른하고 노곤한 오후였다' },
         ],
       },
       {
@@ -165,6 +195,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '구름 한 점 없이', fragment: '구름 한 점 없이 청명했다' },
           { label: '유난히 높은', fragment: '하늘이 유난히 높아 보였다' },
+          { label: '파란 도화지 같은', fragment: '파란 도화지 같은 하늘이었다' },
+          { label: '하늘 사진을 찍음', fragment: '예쁜 하늘을 놓칠세라 사진을 찍었다' },
         ],
       },
     ],
@@ -182,6 +214,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '두방망이질', fragment: '심장이 두방망이질했다' },
           { label: '간질간질', fragment: '마음이 간질간질했다' },
+          { label: '잠 못 이룸', fragment: '설레서 밤에 잠을 설쳤다' },
+          { label: '얼굴에 미소', fragment: '나도 모르게 자꾸 웃음이 났다' },
         ],
       },
       {
@@ -192,6 +226,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '고요하게', fragment: '마음이 고요하게 가라앉았다' },
           { label: '느긋하게', fragment: '느긋하고 평화로운 하루였다' },
+          { label: '마음의 안정', fragment: '마음이 편안하게 안정되는 하루였다' },
+          { label: '잔잔한 음악 같은', fragment: '잔잔한 음악을 듣는 듯 평화로웠다' },
         ],
       },
       {
@@ -202,6 +238,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '스스로 대견', fragment: '스스로가 대견하게 느껴졌다' },
           { label: '자신감', fragment: '자신감이 차올랐다' },
+          { label: '어깨가 으쓱', fragment: '괜히 어깨가 으쓱해졌다' },
+          { label: '보람참', fragment: '노력한 만큼 보람을 느꼈다' },
         ],
       },
       {
@@ -212,6 +250,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '녹초', fragment: '몸이 녹초가 되었다' },
           { label: '무기력', fragment: '하루 종일 무기력했다' },
+          { label: '눈이 감김', fragment: '자꾸만 눈이 스르르 감겼다' },
+          { label: '일찍 잠듦', fragment: '평소보다 일찍 잠자리에 들었다' },
         ],
       },
       {
@@ -222,6 +262,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '울컥', fragment: '그리움에 울컥했다' },
           { label: '사무치게', fragment: '누군가가 사무치게 보고 싶었다' },
+          { label: '사진첩을 넘겨봄', fragment: '옛 사진첩을 괜히 넘겨보았다' },
+          { label: '목소리가 듣고 싶음', fragment: '그 목소리가 문득 듣고 싶어졌다' },
         ],
       },
       {
@@ -232,6 +274,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '미소가 절로', fragment: '미소가 절로 지어졌다' },
           { label: '충만하게', fragment: '행복감이 마음에 충만했다' },
+          { label: '하루가 반짝임', fragment: '평범한 하루가 반짝반짝 빛났다' },
+          { label: '감사한 마음', fragment: '행복해서 자꾸 감사한 마음이 들었다' },
         ],
       },
       {
@@ -242,6 +286,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '울적하게', fragment: '괜히 울적한 기분이 들었다' },
           { label: '눈물이 핑', fragment: '이유 없이 눈물이 핑 돌았다' },
+          { label: '혼자 있고 싶음', fragment: '그냥 혼자 조용히 있고 싶었다' },
+          { label: '이유 모를 처짐', fragment: '이유도 없이 마음이 축 처졌다' },
         ],
       },
       {
@@ -252,6 +298,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '콩닥콩닥', fragment: '가슴이 콩닥콩닥 뛰었다' },
           { label: '긴장되게', fragment: '괜히 긴장이 되었다' },
+          { label: '심장이 빨리 뜀', fragment: '심장이 평소보다 빠르게 뛰었다' },
+          { label: '손에 땀이 남', fragment: '긴장해서 손에 땀이 났다' },
         ],
       },
       {
@@ -262,6 +310,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '마음의 짐을 내려놓음', fragment: '마음의 짐을 내려놓은 기분이었다' },
           { label: '가볍고 자유롭게', fragment: '가볍고 자유로운 하루였다' },
+          { label: '날아갈 듯', fragment: '몸이 날아갈 듯 가벼워졌다' },
+          { label: '걱정이 사라짐', fragment: '걱정거리 하나가 말끔히 사라졌다' },
         ],
       },
       {
@@ -272,6 +322,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '속이 꽉 막힘', fragment: '속이 꽉 막힌 듯했다' },
           { label: '훌쩍 떠나고 싶음', fragment: '어디론가 훌쩍 떠나고 싶었다' },
+          { label: '가슴이 턱 막힘', fragment: '가슴이 턱 막히는 기분이었다' },
+          { label: '창문을 열고 싶음', fragment: '답답해서 창문을 활짝 열고 싶었다' },
         ],
       },
       {
@@ -282,6 +334,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '고마운 사람들', fragment: '고마운 사람들이 떠올랐다' },
           { label: '당연한 게 없음', fragment: '당연한 게 당연하지 않다는 걸 느꼈다' },
+          { label: '하루를 되돌아봄', fragment: '하루를 되돌아보며 감사함을 느꼈다' },
+          { label: '작은 행운', fragment: '작은 행운에도 감사한 마음이 들었다' },
         ],
       },
       {
@@ -292,6 +346,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '무료한 시간', fragment: '무료한 시간이 계속됐다' },
           { label: '스마트폰만', fragment: '괜히 스마트폰만 만지작거렸다' },
+          { label: '시계만 쳐다봄', fragment: '괜히 시계만 자꾸 쳐다봤다' },
+          { label: '뭐라도 하고 싶음', fragment: '뭐라도 해야 할 것 같은 기분이었다' },
         ],
       },
       {
@@ -302,6 +358,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '심장이 쫄깃', fragment: '심장이 쫄깃해지는 순간이었다' },
           { label: '전율이 느껴짐', fragment: '짜릿한 전율이 느껴졌다' },
+          { label: '온몸에 소름', fragment: '온몸에 소름이 돋을 만큼 짜릿했다' },
+          { label: '성취의 손맛', fragment: '손끝에서 성취감이 짜릿하게 느껴졌다' },
         ],
       },
       {
@@ -312,6 +370,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '따뜻하게', fragment: '마음이 몽글몽글 따뜻해졌다' },
           { label: '웃음이 새어나옴', fragment: '괜히 웃음이 새어 나왔다' },
+          { label: '솜사탕 같은 기분', fragment: '솜사탕처럼 몽글몽글한 기분이었다' },
+          { label: '마음이 몰랑해짐', fragment: '마음이 몰랑몰랑해지는 순간이었다' },
         ],
       },
       {
@@ -322,6 +382,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '뭔가 빠진 듯', fragment: '뭔가 빠진 듯한 기분이었다' },
           { label: '쓸쓸하게', fragment: '괜히 마음이 쓸쓸했다' },
+          { label: '채워지지 않음', fragment: '뭔가로도 채워지지 않는 허전함이었다' },
+          { label: '조용한 방', fragment: '유난히 방 안이 조용하게 느껴졌다' },
         ],
       },
       {
@@ -332,6 +394,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '가슴이 뭉클', fragment: '가슴이 뭉클해졌다' },
           { label: '말로 못 할 감정', fragment: '말로 표현 못 할 감정이 차올랐다' },
+          { label: '눈시울이 붉어짐', fragment: '벅찬 마음에 눈시울이 붉어졌다' },
+          { label: '심장이 터질 듯', fragment: '심장이 터질 듯 벅차올랐다' },
         ],
       },
     ],
@@ -349,6 +413,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '고요히 홀로', fragment: '고요히 홀로 시간을 보냈다' },
           { label: '자유롭게', fragment: '누구의 방해도 없이 자유로웠다' },
+          { label: '나만의 속도로', fragment: '나만의 속도로 하루를 채워나갔다' },
+          { label: '방해받지 않음', fragment: '누구에게도 방해받지 않고 시간을 보냈다' },
         ],
       },
       {
@@ -359,6 +425,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '부모님과', fragment: '부모님과 오랜만에 이야기를 나눴다' },
           { label: '온 가족이', fragment: '온 가족이 모여 웃었다' },
+          { label: '함께 식사함', fragment: '가족과 둘러앉아 밥을 먹었다' },
+          { label: '안부를 나눔', fragment: '가족과 서로의 안부를 물었다' },
         ],
       },
       {
@@ -371,6 +439,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '오랜만에 반가움', fragment: '오랜만에 친구를 만나 반가웠다' },
           { label: '깊은 대화', fragment: '친구와 깊은 대화를 나눴다' },
+          { label: '실없는 농담', fragment: '친구와 실없는 농담을 주고받았다' },
+          { label: '덕분에 즐거움', fragment: '친구 덕분에 하루가 즐거워졌다' },
         ],
       },
       {
@@ -383,6 +453,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '설레는 데이트', fragment: '연인과 설레는 데이트를 즐겼다' },
           { label: '다정하게', fragment: '다정한 순간을 함께 나눴다' },
+          { label: '손을 꼭 잡고', fragment: '연인과 손을 꼭 잡고 걸었다' },
+          { label: '사소한 말에도 웃음', fragment: '연인의 사소한 말에도 웃음이 났다' },
         ],
       },
       {
@@ -395,6 +467,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '산책까지', fragment: '반려동물과 신나게 산책했다' },
           { label: '애교부리며', fragment: '반려동물이 애교를 부렸다' },
+          { label: '곁에서 잠듦', fragment: '반려동물이 곁에서 잠들어 있었다' },
+          { label: '든든한 존재', fragment: '반려동물 덕분에 하루가 든든했다' },
         ],
       },
       {
@@ -405,6 +479,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '협업하며', fragment: '동료들과 손발을 맞춰 일했다' },
           { label: '회의하며', fragment: '동료들과 회의를 하며 아이디어를 나눴다' },
+          { label: '커피 한 잔', fragment: '동료와 커피를 마시며 잠깐 쉬었다' },
+          { label: '응원 한마디', fragment: '동료의 응원 한마디가 힘이 됐다' },
         ],
       },
       {
@@ -415,6 +491,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '친절을 베풀다', fragment: '낯선 사람에게 작은 친절을 베풀었다' },
           { label: '도움을 받다', fragment: '낯선 사람에게 뜻밖의 도움을 받았다' },
+          { label: '눈이 마주치다', fragment: '낯선 사람과 눈이 마주쳐 살짝 웃었다' },
+          { label: '배려에 감동', fragment: '낯선 사람의 배려에 마음이 따뜻해졌다' },
         ],
       },
       {
@@ -427,6 +505,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '연락해보다', fragment: '오랜만에 옛 친구에게 연락해보았다' },
           { label: '추억에 잠기다', fragment: '옛 추억이 문득 떠올랐다' },
+          { label: '연락이 닿다', fragment: '오랜 친구와 오랜만에 연락이 닿았다' },
+          { label: '생각에 미소', fragment: '옛 친구 생각에 잠깐 미소 지었다' },
         ],
       },
       {
@@ -439,6 +519,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '짧은 대화', fragment: '이웃과 짧은 대화를 나눴다' },
           { label: '작은 도움', fragment: '이웃에게 작은 도움을 받았다' },
+          { label: '엘리베이터 인사', fragment: '이웃과 엘리베이터에서 짧게 인사했다' },
+          { label: '작은 선물', fragment: '이웃이 건넨 작은 선물에 감동했다' },
         ],
       },
       {
@@ -449,6 +531,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '응원이 힘이 됨', fragment: '선생님의 응원이 힘이 됐다' },
           { label: '문득 생각남', fragment: '오랜만에 선생님이 생각났다' },
+          { label: '안부를 나눔', fragment: '선생님과 오랜만에 안부를 나눴다' },
+          { label: '한마디가 남음', fragment: '선생님의 한마디가 오래 남았다' },
         ],
       },
       {
@@ -461,6 +545,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '성장이 대견함', fragment: '후배의 성장이 대견했다' },
           { label: '밥을 사줌', fragment: '후배에게 밥을 사줬다' },
+          { label: '고민을 들어줌', fragment: '후배의 고민을 함께 들어줬다' },
+          { label: '저녁을 함께', fragment: '후배와 오랜만에 저녁을 함께했다' },
         ],
       },
       {
@@ -473,6 +559,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '커피 한 잔', fragment: '선배와 커피 한 잔을 했다' },
           { label: '큰 힘이 됨', fragment: '선배 이야기에 큰 힘을 얻었다' },
+          { label: '일 이야기', fragment: '선배에게 일 이야기를 물어봤다' },
+          { label: '배려에 안심', fragment: '선배의 배려에 마음이 놓였다' },
         ],
       },
       {
@@ -483,6 +571,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '신나게 놀아줌', fragment: '아이와 신나게 놀아줬다' },
           { label: '재잘거림', fragment: '아이의 재잘거림이 사랑스러웠다' },
+          { label: '함께 그림 그리기', fragment: '아이와 함께 그림을 그렸다' },
+          { label: '엉뚱한 질문', fragment: '아이의 질문에 웃음이 터졌다' },
         ],
       },
       {
@@ -493,6 +583,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '즐거운 대화', fragment: '손님과 즐거운 대화를 나눴다' },
           { label: '활기찬 하루', fragment: '손님 덕분에 하루가 활기찼다' },
+          { label: '칭찬을 받음', fragment: '손님의 칭찬에 하루가 즐거웠다' },
+          { label: '소소한 이야기', fragment: '손님과 소소한 이야기를 나눴다' },
         ],
       },
       {
@@ -505,6 +597,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '같이 게임함', fragment: '온라인 친구와 게임을 했다' },
           { label: '마음이 통함', fragment: '화면 너머로도 마음이 통했다' },
+          { label: '밤늦게까지 채팅', fragment: '온라인 친구와 밤늦게까지 채팅했다' },
+          { label: '응원을 받음', fragment: '온라인 친구의 응원에 힘이 났다' },
         ],
       },
       {
@@ -515,6 +609,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '서비스를 챙겨줌', fragment: '사장님이 서비스를 챙겨주셨다' },
           { label: '정겨운 대화', fragment: '정겨운 대화가 오갔다' },
+          { label: '하루 이야기', fragment: '사장님과 오늘 하루 이야기를 나눴다' },
+          { label: '미소가 좋음', fragment: '사장님의 미소에 기분이 좋아졌다' },
         ],
       },
     ],
@@ -532,6 +628,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '이불 밖은 위험', fragment: '이불 속에서 뒹굴거렸다' },
           { label: '집안일', fragment: '밀린 집안일을 했다' },
+          { label: '포근함을 느낌', fragment: '따뜻한 집이 유난히 포근하게 느껴졌다' },
+          { label: '나만의 시간', fragment: '집에서 나만의 시간을 만끽했다' },
         ],
       },
       {
@@ -542,6 +640,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '창가 자리', fragment: '카페 창가 자리에 오래 앉아 있었다' },
           { label: '새로운 카페', fragment: '처음 가보는 카페를 찾아갔다' },
+          { label: '음악을 들음', fragment: '카페에서 좋아하는 음악을 들었다' },
+          { label: '달콤한 디저트', fragment: '달콤한 디저트로 기분을 냈다' },
         ],
       },
       {
@@ -552,6 +652,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '정신없이', fragment: '일터에서 정신없이 하루를 보냈다' },
           { label: '여유롭게', fragment: '일터에서 비교적 여유로운 하루를 보냈다' },
+          { label: '작은 성취감', fragment: '일터에서 작은 성취감을 느꼈다' },
+          { label: '함께 버틴 하루', fragment: '동료들과 함께 바쁜 하루를 버텼다' },
         ],
       },
       {
@@ -562,6 +664,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '벤치에 앉아', fragment: '공원 벤치에 앉아 바람을 쐬었다' },
           { label: '돗자리 피크닉', fragment: '공원에 돗자리를 펴고 쉬었다' },
+          { label: '반려동물과 함께', fragment: '공원에서 반려동물과 산책했다' },
+          { label: '나무 그늘', fragment: '공원의 나무 그늘 아래 쉬었다' },
         ],
       },
       {
@@ -572,6 +676,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '파도 소리', fragment: '파도 소리를 한참 들었다' },
           { label: '노을 지는', fragment: '바다에 지는 노을을 바라봤다' },
+          { label: '맨발로 백사장', fragment: '맨발로 백사장을 걸었다' },
+          { label: '바다 냄새', fragment: '바다 냄새를 깊게 들이마셨다' },
         ],
       },
       {
@@ -582,6 +688,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '정상에서', fragment: '산 정상에서 탁 트인 풍경을 봤다' },
           { label: '숲 내음', fragment: '숲 내음을 맡으며 걸었다' },
+          { label: '땀 흘리며 등반', fragment: '땀 흘리며 산을 올랐다' },
+          { label: '맑은 공기', fragment: '산에서 맑은 공기를 마셨다' },
         ],
       },
       {
@@ -592,6 +700,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '골목을 헤매다', fragment: '낯선 골목을 정처 없이 헤맸다' },
           { label: '새로운 풍경', fragment: '낯선 풍경에 마음을 빼앗겼다' },
+          { label: '낯선 음식', fragment: '낯선 음식에 도전해봤다' },
+          { label: '기념품 고르기', fragment: '여행지에서 기념품을 골랐다' },
         ],
       },
       {
@@ -602,6 +712,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '가로등 아래', fragment: '가로등 켜진 골목길을 걸었다' },
           { label: '추억의 골목', fragment: '어릴 적 추억이 담긴 골목을 지났다' },
+          { label: '담벼락 그림', fragment: '골목길 담벼락의 그림에 눈길이 갔다' },
+          { label: '새삼 정겨움', fragment: '익숙한 골목길이 새삼 정겨웠다' },
         ],
       },
       {
@@ -612,6 +724,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '책 냄새 가득', fragment: '책 냄새 가득한 도서관에 머물렀다' },
           { label: '집중이 잘 됨', fragment: '도서관에서 집중이 잘 됐다' },
+          { label: '좋은 책 발견', fragment: '도서관에서 좋은 책을 발견했다' },
+          { label: '창가 자리', fragment: '도서관 창가 자리에 앉아 시간을 보냈다' },
         ],
       },
       {
@@ -622,6 +736,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '운동 후 개운함', fragment: '운동 후 개운함을 느꼈다' },
           { label: '새로운 루틴', fragment: '헬스장에서 새로운 루틴에 도전했다' },
+          { label: '목표 달성', fragment: '헬스장에서 목표한 만큼 운동했다' },
+          { label: '낯선 인사', fragment: '헬스장에서 낯선 사람과 인사를 나눴다' },
         ],
       },
       {
@@ -632,6 +748,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '앞에서 잠깐 쉼', fragment: '편의점 앞에서 잠깐 쉬었다' },
           { label: '야식 구매', fragment: '야식을 사러 편의점에 들렀다' },
+          { label: '도시락 한 끼', fragment: '편의점 도시락으로 끼니를 해결했다' },
+          { label: '테이블에서 잠깐', fragment: '편의점 앞 테이블에서 잠깐 쉬었다' },
         ],
       },
       {
@@ -642,6 +760,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '팝콘 냄새', fragment: '팝콘 냄새 가득한 영화관에 있었다' },
           { label: '오랜만의 극장', fragment: '오랜만에 극장 나들이를 했다' },
+          { label: '웃고 울고', fragment: '영화관에서 마음껏 웃고 울었다' },
+          { label: '큰 스크린', fragment: '오랜만에 큰 스크린을 즐겼다' },
         ],
       },
       {
@@ -652,6 +772,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '우연한 발견', fragment: '우연히 좋은 책을 발견했다' },
           { label: '여유롭게', fragment: '서점에서 여유롭게 시간을 보냈다' },
+          { label: '시간 가는 줄 모름', fragment: '서점에서 시간 가는 줄 몰랐다' },
+          { label: '예쁜 표지', fragment: '표지가 예쁜 책에 눈이 갔다' },
         ],
       },
       {
@@ -662,6 +784,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '활기찬 분위기', fragment: '활기찬 시장 분위기를 느꼈다' },
           { label: '먹거리 구경', fragment: '맛있는 먹거리를 구경했다' },
+          { label: '제철 재료', fragment: '시장에서 제철 재료를 샀다' },
+          { label: '정겨운 흥정', fragment: '정겨운 흥정이 오갔다' },
         ],
       },
       {
@@ -672,6 +796,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '놀이기구', fragment: '놀이기구를 타며 소리를 질렀다' },
           { label: '동심으로', fragment: '오랜만에 동심으로 돌아갔다' },
+          { label: '하루 종일 걷기', fragment: '놀이공원에서 하루 종일 걸어 다녔다' },
+          { label: '아이처럼 신남', fragment: '오랜만에 아이처럼 신났다' },
         ],
       },
       {
@@ -682,6 +808,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '사람들 구경', fragment: '기차를 기다리며 사람들을 구경했다' },
           { label: '설레는 기다림', fragment: '플랫폼에서 설레는 마음으로 기다렸다' },
+          { label: '여행자 구경', fragment: '기차역에서 낯선 여행자들을 구경했다' },
+          { label: '발걸음을 재촉', fragment: '기차를 놓칠까 봐 발걸음을 재촉했다' },
         ],
       },
     ],
@@ -699,6 +827,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '밤산책', fragment: '선선한 밤공기를 맞으며 걸었다' },
           { label: '느린 걸음', fragment: '느린 걸음으로 동네를 걸었다' },
+          { label: '생각 정리', fragment: '산책하며 이런저런 생각을 정리했다' },
+          { label: '동네 구경', fragment: '동네 구석구석을 천천히 둘러봤다' },
         ],
       },
       {
@@ -709,6 +839,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '몰입해서', fragment: '시간 가는 줄 모르고 책에 빠졌다' },
           { label: '필사하며', fragment: '좋은 문장을 옮겨 적었다' },
+          { label: '밑줄 긋기', fragment: '인상 깊은 구절에 밑줄을 그었다' },
+          { label: '다음이 궁금함', fragment: '다음 이야기가 궁금해 책장을 넘겼다' },
         ],
       },
       {
@@ -719,6 +851,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '펑펑 울며', fragment: '영화를 보다 펑펑 울었다' },
           { label: '몰아보기', fragment: '영화를 연달아 몰아봤다' },
+          { label: '결말이 남음', fragment: '결말이 오래도록 마음에 남았다' },
+          { label: '반가운 배우', fragment: '좋아하는 배우가 나와 반가웠다' },
         ],
       },
       {
@@ -729,6 +863,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '가볍게 스트레칭', fragment: '가볍게 스트레칭을 했다' },
           { label: '한계까지', fragment: '한계까지 몸을 밀어붙였다' },
+          { label: '개운함', fragment: '운동을 마치고 개운함을 느꼈다' },
+          { label: '숨이 차도록', fragment: '숨이 차도록 몸을 움직였다' },
         ],
       },
       {
@@ -739,6 +875,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '새로운 레시피', fragment: '처음 해보는 레시피에 도전했다' },
           { label: '냉장고 파먹기', fragment: '냉장고 속 재료로 뚝딱 만들었다' },
+          { label: '완성의 뿌듯함', fragment: '완성된 요리를 보며 뿌듯했다' },
+          { label: '기대 이상의 맛', fragment: '예상보다 맛있게 완성돼서 놀랐다' },
         ],
       },
       {
@@ -749,6 +887,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '밤새도록', fragment: '밤이 늦도록 수다를 떨었다' },
           { label: '깔깔대며', fragment: '깔깔대며 실컷 웃었다' },
+          { label: '실컷 풀어냄', fragment: '묵혀뒀던 이야기를 실컷 풀어냈다' },
+          { label: '마음이 가벼워짐', fragment: '대화 끝에 마음이 한결 가벼워졌다' },
         ],
       },
       {
@@ -759,6 +899,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '꿀잠', fragment: '꿀 같은 낮잠을 잤다' },
           { label: '잠깐의 휴식', fragment: '잠깐 눈을 붙였다' },
+          { label: '상쾌한 오후', fragment: '낮잠 덕분에 오후가 상쾌했다' },
+          { label: '나른하게 늘어짐', fragment: '이불 속에서 나른하게 늘어졌다' },
         ],
       },
       {
@@ -769,6 +911,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '미니멀하게', fragment: '안 쓰는 물건들을 비워냈다' },
           { label: '새단장', fragment: '방 분위기를 새롭게 바꿨다' },
+          { label: '개운한 기분', fragment: '정리를 끝내고 개운한 기분이 들었다' },
+          { label: '잃어버린 물건 발견', fragment: '오랫동안 찾던 물건을 발견했다' },
         ],
       },
       {
@@ -779,6 +923,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '편하게 낙서', fragment: '낙서하듯 편하게 그림을 그렸다' },
           { label: '마음이 편안해짐', fragment: '색을 칠하며 마음이 편안해졌다' },
+          { label: '색 고르기', fragment: '색을 고르는 것부터 즐거웠다' },
+          { label: '완성의 흐뭇함', fragment: '완성된 그림을 보며 흐뭇했다' },
         ],
       },
       {
@@ -789,6 +935,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '일상을 담음', fragment: '일상의 순간을 사진에 담았다' },
           { label: '마음에 드는 한 장', fragment: '마음에 드는 사진 한 장을 건졌다' },
+          { label: '여러 각도로', fragment: '같은 장면을 여러 각도로 찍어봤다' },
+          { label: '사진 다시 보기', fragment: '찍은 사진들을 다시 들여다봤다' },
         ],
       },
       {
@@ -799,6 +947,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '시간 가는 줄 모름', fragment: '시간 가는 줄 모르고 게임을 했다' },
           { label: '스트레스 해소', fragment: '오랜만에 스트레스가 풀렸다' },
+          { label: '원하는 성과', fragment: '오랜만에 원하는 성과를 냈다' },
+          { label: '함께 즐김', fragment: '친구와 함께 게임을 즐겼다' },
         ],
       },
       {
@@ -809,6 +959,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '집중해서 몰두', fragment: '집중해서 공부에 몰두했다' },
           { label: '실력이 느는 걸 느낌', fragment: '조금씩 실력이 느는 게 느껴졌다' },
+          { label: '드디어 이해함', fragment: '어려운 부분을 마침내 이해했다' },
+          { label: '계획 완수', fragment: '계획한 분량을 다 끝냈다' },
         ],
       },
       {
@@ -819,6 +971,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '마음을 담아', fragment: '마음을 담아 글을 써 내려갔다' },
           { label: '생각이 정리됨', fragment: '쓰다 보니 생각이 정리됐다' },
+          { label: '후련해짐', fragment: '쓰다 보니 마음이 후련해졌다' },
+          { label: '다시 읽어봄', fragment: '적어둔 글을 다시 읽어봤다' },
         ],
       },
       {
@@ -829,6 +983,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '목이 쉬도록', fragment: '목이 쉬도록 노래를 불렀다' },
           { label: '스트레스가 날아감', fragment: '노래 한 곡에 스트레스가 날아갔다' },
+          { label: '목청껏 부르기', fragment: '좋아하는 노래를 목청껏 불렀다' },
+          { label: '기분이 풀림', fragment: '노래를 부르니 기분이 풀렸다' },
         ],
       },
       {
@@ -839,6 +995,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '새순을 발견', fragment: '새순이 돋은 걸 발견했다' },
           { label: '마음이 차분해짐', fragment: '식물을 돌보며 마음이 차분해졌다' },
+          { label: '잎을 닦아줌', fragment: '잎을 닦아주며 애정을 쏟았다' },
+          { label: '자란 모습에 뿌듯', fragment: '식물이 자란 걸 보고 뿌듯했다' },
         ],
       },
       {
@@ -849,6 +1007,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '마음에 드는 물건', fragment: '마음에 드는 물건을 발견했다' },
           { label: '충동구매', fragment: '충동구매를 하고 살짝 후회했다' },
+          { label: '알뜰한 득템', fragment: '필요했던 물건을 저렴하게 샀다' },
+          { label: '구경만 하고 빈손', fragment: '구경만 하다가 빈손으로 돌아왔다' },
         ],
       },
     ],
@@ -866,6 +1026,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '드디어 완료', fragment: '미뤄뒀던 일을 드디어 끝냈다' },
           { label: '한 걸음 성장', fragment: '어제보다 한 걸음 성장했다' },
+          { label: '끝까지 해냄', fragment: '계획한 일을 끝까지 해냈다' },
+          { label: '포기하지 않음', fragment: '포기하지 않은 내가 대견했다' },
         ],
       },
       {
@@ -876,6 +1038,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '깜짝 선물', fragment: '생각지도 못한 선물을 받았다' },
           { label: '따뜻한 말 한마디', fragment: '따뜻한 말 한마디에 위로받았다' },
+          { label: '마음이 채워짐', fragment: '예상치 못한 순간에 마음이 채워졌다' },
+          { label: '특별해진 하루', fragment: '작은 선물에 하루가 특별해졌다' },
         ],
       },
       {
@@ -886,6 +1050,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '민망했지만', fragment: '민망한 실수를 하고 말았다' },
           { label: '웃어넘기다', fragment: '실수했지만 웃으며 넘겼다' },
+          { label: '무사히 넘김', fragment: '당황했지만 무사히 넘어갔다' },
+          { label: '배움을 얻음', fragment: '실수 덕분에 새로운 걸 배웠다' },
         ],
       },
       {
@@ -896,6 +1062,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '길에서 마주치다', fragment: '길에서 반가운 얼굴을 마주쳤다' },
           { label: '인연이 닿다', fragment: '생각지도 못한 인연이 닿았다' },
+          { label: '뜻밖의 장소', fragment: '생각지도 못한 곳에서 마주쳤다' },
+          { label: '짧지만 반가움', fragment: '짧은 만남이었지만 반가웠다' },
         ],
       },
       {
@@ -906,6 +1074,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '무한반복', fragment: '노래 한 곡을 무한 반복해서 들었다' },
           { label: '플레이리스트', fragment: '새로운 플레이리스트를 찾았다' },
+          { label: '가사가 콕 박힘', fragment: '노래 가사가 마음에 콕 박혔다' },
+          { label: '기분이 좋아짐', fragment: '그 노래 덕분에 기분이 좋아졌다' },
         ],
       },
       {
@@ -916,6 +1086,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '인생 맛집', fragment: '인생 맛집을 발견했다' },
           { label: '직접 만든 요리', fragment: '직접 만든 음식이 맛있게 됐다' },
+          { label: '한입에 행복', fragment: '한입 먹자마자 행복해졌다' },
+          { label: '또 먹고 싶음', fragment: '다음에 또 먹고 싶어졌다' },
         ],
       },
       {
@@ -926,6 +1098,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '용기를 내다', fragment: '용기를 내어 새로운 걸 시도했다' },
           { label: '낯선 도전', fragment: '낯선 도전 앞에서 설렜다' },
+          { label: '생각보다 잘함', fragment: '생각보다 잘 해내서 놀랐다' },
+          { label: '다음 도전을 다짐', fragment: '다음에 또 도전해보고 싶어졌다' },
         ],
       },
       {
@@ -936,6 +1110,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '멍때리기', fragment: '아무 생각 없이 멍하니 있었다' },
           { label: '나를 위한 시간', fragment: '온전히 나를 위한 시간을 보냈다' },
+          { label: '쫓기지 않음', fragment: '시간에 쫓기지 않아 좋았다' },
+          { label: '숨 돌릴 틈', fragment: '오랜만에 숨 돌릴 틈이 생겼다' },
         ],
       },
       {
@@ -946,6 +1122,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '생각지도 못한 칭찬', fragment: '생각지도 못한 칭찬을 받았다' },
           { label: '오래 남은 한마디', fragment: '그 말 한마디가 오래 남았다' },
+          { label: '하루 종일 좋음', fragment: '괜히 하루 종일 기분이 좋았다' },
+          { label: '두고두고 힘이 됨', fragment: '그 말이 두고두고 힘이 됐다' },
         ],
       },
       {
@@ -956,6 +1134,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '감정이 북받침', fragment: '감정이 북받쳐 올랐다' },
           { label: '울고 나니 후련함', fragment: '울고 나니 마음이 후련해졌다' },
+          { label: '왈칵 쏟아짐', fragment: '참았던 마음이 왈칵 쏟아졌다' },
+          { label: '마음이 가벼워짐', fragment: '울고 나니 마음이 가벼워졌다' },
         ],
       },
       {
@@ -966,6 +1146,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '배꼽 잡고 웃음', fragment: '배꼽 잡고 웃었다' },
           { label: '오랜만에 실컷', fragment: '오랜만에 실컷 웃었다' },
+          { label: '생각만 해도 웃김', fragment: '생각만 해도 웃음이 났다' },
+          { label: '자꾸 떠올리며 웃음', fragment: '그 순간을 자꾸 떠올리며 웃었다' },
         ],
       },
       {
@@ -976,6 +1158,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '기다리던 소식', fragment: '기다리던 소식이 도착했다' },
           { label: '하루 종일 기분 좋음', fragment: '덕분에 하루 종일 기분이 좋았다' },
+          { label: '소리를 지름', fragment: '소식을 듣자마자 소리를 질렀다' },
+          { label: '자랑하고 싶음', fragment: '누군가에게 자랑하고 싶어졌다' },
         ],
       },
       {
@@ -986,6 +1170,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '못내 아쉬움', fragment: '헤어짐이 못내 아쉬웠다' },
           { label: '다음을 기약함', fragment: '다음을 기약하며 인사했다' },
+          { label: '무거운 발걸음', fragment: '돌아서는 발걸음이 무거웠다' },
+          { label: '다시 만날 날', fragment: '다시 만날 날을 기다리기로 했다' },
         ],
       },
       {
@@ -996,6 +1182,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '생각이 많아짐', fragment: '생각이 많아지는 대화였다' },
           { label: '마음을 확인함', fragment: '서로의 마음을 확인한 시간이었다' },
+          { label: '진심을 확인함', fragment: '서로의 진심을 확인한 시간이었다' },
+          { label: '여운이 남음', fragment: '대화가 끝나고도 여운이 남았다' },
         ],
       },
       {
@@ -1006,6 +1194,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '날씨가 기분을 맑게 함', fragment: '날씨가 기분까지 맑게 해줬다' },
           { label: '절로 기분 좋아짐', fragment: '화창한 날씨에 절로 기분이 좋아졌다' },
+          { label: '하루가 달라짐', fragment: '날씨 하나로 하루가 달라졌다' },
+          { label: '기운이 남', fragment: '맑은 하늘 덕에 기운이 났다' },
         ],
       },
       {
@@ -1016,6 +1206,8 @@ export const CATEGORIES: Category[] = [
         variants: [
           { label: '나에게 주는 선물', fragment: '나에게 작은 선물을 했다' },
           { label: '가끔은 필요한 여유', fragment: '가끔은 이런 여유도 필요했다' },
+          { label: '아낌없이 씀', fragment: '가끔은 나를 위해 아낌없이 썼다' },
+          { label: '큰 위로가 됨', fragment: '작은 사치가 큰 위로가 됐다' },
         ],
       },
     ],
