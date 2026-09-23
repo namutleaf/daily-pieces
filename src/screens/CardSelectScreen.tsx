@@ -12,7 +12,7 @@ import MoodMessageModal from '../components/MoodMessageModal';
 import { buildDiaryEntry } from '../utils/generateDiary';
 import { pickMoodMessage } from '../data/moodMessages';
 import { detectToneFromText } from '../utils/detectTone';
-import { objectParticle } from '../utils/korean';
+import { objectParticle, wasCopula, withParticleGwa } from '../utils/korean';
 import {
   addCustomWord,
   applyCustomLineAndTone,
@@ -27,6 +27,22 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
 
 const SET_SIZE = 8;
 const CUSTOM_EMOJI_OPTIONS = ['✨', '📌', '💭', '🌟', '🍀', '🎈', '🖋️', '📷'];
+
+// A user-typed word can't get the hand-crafted sentences the presets have,
+// but "~을 골랐다" (chose ~) read like a menu pick rather than a diary line
+// no matter the category — these read the way each category's own presets
+// do (weather/mood as a copula, person alongside "함께", place as a
+// setting, activity as a verb, moment as what happened), while still
+// working for arbitrary text since none of them require conjugating the
+// label itself. All end in "다" so tone-swapping keeps working.
+const CUSTOM_FRAGMENT: Record<CategoryKey, (label: string) => string> = {
+  weather: (label) => `오늘 날씨는 ${wasCopula(label)}`,
+  mood: (label) => `오늘 기분은 ${wasCopula(label)}`,
+  person: (label) => `${withParticleGwa(label)} 함께한 하루였다`,
+  place: (label) => `${label}에서 하루를 보냈다`,
+  activity: (label) => `${objectParticle(label)} 했다`,
+  moment: (label) => `특별한 순간은 ${wasCopula(label)}`,
+};
 
 function isCustomWordId(id: string) {
   return id.startsWith('custom-');
@@ -140,12 +156,7 @@ export default function CardSelectScreen({ navigation, route }: Props) {
       id: `custom-${category.key}-${Date.now()}`,
       label,
       emoji: newWordEmoji,
-      // A generic but always-grammatical past-tense fragment, since a
-      // user-typed word can't get the hand-crafted sentences the presets
-      // have — tone-swapping still works since it still ends in "다".
-      // objectParticle(label) already returns "label+을/를", so it must
-      // stand alone — prefixing label again would double it up.
-      fragment: `${objectParticle(label)} 골랐다`,
+      fragment: CUSTOM_FRAGMENT[category.key](label),
     };
     await addCustomWord(category.key, word);
     setCustomWords((prev) => [...prev, word]);

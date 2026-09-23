@@ -15,3 +15,6 @@ export const topicParticle = (word: string) => withParticle(word, '은', '는');
 export const subjectParticle = (word: string) => withParticle(word, '이', '가');
 export const objectParticle = (word: string) => withParticle(word, '을', '를');
 export const withParticleGwa = (word: string) => withParticle(word, '과', '와');
+// Past-tense copula ("was ~"), for turning an arbitrary noun phrase into a
+// grammatical sentence ending without knowing how to conjugate it as a verb.
+export const wasCopula = (word: string) => withParticle(word, '이었다', '였다');
