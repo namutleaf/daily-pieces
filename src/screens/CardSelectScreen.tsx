@@ -143,7 +143,9 @@ export default function CardSelectScreen({ navigation, route }: Props) {
       // A generic but always-grammatical past-tense fragment, since a
       // user-typed word can't get the hand-crafted sentences the presets
       // have — tone-swapping still works since it still ends in "다".
-      fragment: `${label}${objectParticle(label)} 골랐다`,
+      // objectParticle(label) already returns "label+을/를", so it must
+      // stand alone — prefixing label again would double it up.
+      fragment: `${objectParticle(label)} 골랐다`,
     };
     await addCustomWord(category.key, word);
     setCustomWords((prev) => [...prev, word]);

@@ -21,6 +21,12 @@ const TEXT_SIZE_SCALE: Record<NonNullable<DiaryEntry['textSize']>, number> = {
 // snaps — Instagram/PowerPoint-style magnetic alignment.
 const SNAP_PX = 8;
 
+// A virtual "safe border" inset from the card's own edges — matches the
+// card's text padding, so a sticker dragged toward the edge snaps flush
+// against it instead of bleeding past where the text sits. Same idea as
+// Instagram's screen-edge sticker guides.
+const SAFE_MARGIN_PX = 26;
+
 type SnapCandidate = { value: number; kind: 'center' | 'align' };
 
 // Snapped to the card's own center (Instagram-style) vs. lined up with
@@ -133,16 +139,27 @@ const DiaryCard = forwardRef<View, Props>(
       const draggedHalfW = (STICKER_BASE_SIZE * draggedScale) / 2 / cardSize.width;
       const draggedHalfH = (STICKER_BASE_SIZE * draggedScale) / 2 / cardSize.height;
 
-      // Snap to: the card's own center (Instagram-style), each other
-      // sticker's center or matching edge (lining up rows/columns or flush
+      // Snap to: the card's own center and its safe-border inset
+      // (Instagram-style, both "canvas" guides), each other sticker's
+      // center or matching edge (lining up rows/columns or flush
       // left/right/top/bottom, PowerPoint-style), and the midpoint between
       // any two other stickers (even spacing between three). The closest
       // one wins, so dragging near an existing row of stickers lines up
-      // with THEM rather than jumping back to card-center — center and
-      // edge/spacing guides are drawn in different colors so it's clear
-      // which one fired.
-      const xCandidates: SnapCandidate[] = [{ value: 0.5, kind: 'center' }];
-      const yCandidates: SnapCandidate[] = [{ value: 0.5, kind: 'center' }];
+      // with THEM rather than jumping back to card-center — canvas guides
+      // and sticker-to-sticker guides are drawn in different colors so
+      // it's clear which one fired.
+      const marginXFrac = SAFE_MARGIN_PX / cardSize.width;
+      const marginYFrac = SAFE_MARGIN_PX / cardSize.height;
+      const xCandidates: SnapCandidate[] = [
+        { value: 0.5, kind: 'center' },
+        { value: marginXFrac + draggedHalfW, kind: 'center' }, // flush with left safe border
+        { value: 1 - marginXFrac - draggedHalfW, kind: 'center' }, // flush with right safe border
+      ];
+      const yCandidates: SnapCandidate[] = [
+        { value: 0.5, kind: 'center' },
+        { value: marginYFrac + draggedHalfH, kind: 'center' }, // flush with top safe border
+        { value: 1 - marginYFrac - draggedHalfH, kind: 'center' }, // flush with bottom safe border
+      ];
       others.forEach((s) => {
         const otherHalfW = (STICKER_BASE_SIZE * s.scale) / 2 / cardSize.width;
         const otherHalfH = (STICKER_BASE_SIZE * s.scale) / 2 / cardSize.height;
