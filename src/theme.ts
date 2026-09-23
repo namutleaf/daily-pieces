@@ -28,6 +28,19 @@ export const MOOD_PALETTES: Record<PaletteKey, MoodPalette> = {
   행복: { colors: ['#FFF0A8', '#FFC98B'], text: '#4A3A0A', subtext: '#6B5420' },
   '살짝 우울': { colors: ['#C6D4E5', '#8FA3C2'], text: '#1E2A3A', subtext: '#3A4C63' },
   두근두근: { colors: ['#FFC2C2', '#FF8FA3'], text: '#4A1620', subtext: '#6B2233' },
+  // The mood category's second card set (src/data/words.ts m9-m16) added
+  // these 8 words without a matching palette, so they were silently
+  // falling back to DEFAULT_PALETTE ('평온') everywhere — card background,
+  // stats swatches, and the mood message below all mismatched the mood
+  // actually picked.
+  홀가분함: { colors: ['#D9F5E6', '#A8DCC4'], text: '#123B2A', subtext: '#2C5A45' },
+  답답함: { colors: ['#E2D9D2', '#B7A493'], text: '#3A2A1C', subtext: '#5A4534' },
+  감사함: { colors: ['#FDE7CE', '#F4C48E'], text: '#4A2E0E', subtext: '#6B4A22' },
+  심심함: { colors: ['#E6E8EE', '#BCC4D2'], text: '#2A303C', subtext: '#454C5C' },
+  짜릿함: { colors: ['#E4FAC7', '#AEE07E'], text: '#1F3B0A', subtext: '#375A1C' },
+  몽글몽글함: { colors: ['#FBE3F3', '#E4BFEE'], text: '#442048', subtext: '#603A66' },
+  허전함: { colors: ['#DEE4EC', '#AFBBCB'], text: '#242E3D', subtext: '#3C4A5C' },
+  벅참: { colors: ['#FFDAD3', '#F3A79A'], text: '#4A180F', subtext: '#6B2E20' },
 };
 
 export const DEFAULT_PALETTE: MoodPalette = MOOD_PALETTES['평온'];

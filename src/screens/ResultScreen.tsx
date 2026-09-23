@@ -274,9 +274,13 @@ export default function ResultScreen({ route, navigation }: Props) {
       entry.lineOverrides.custom !== undefined ? [...ALL_LINE_KEYS, 'custom'] : ALL_LINE_KEYS;
     keysToCheck.forEach((key) => {
       const draft = draftLines[key];
-      if (draft !== undefined && draft.trim() !== getCurrentFinalText(key)) {
-        patch[key] = draft.trim();
-      }
+      if (draft === undefined) return;
+      const trimmed = draft.trim();
+      if (trimmed === getCurrentFinalText(key)) return;
+      // Clearing the custom line's text should remove the line entirely
+      // (and the spacer above it) — an empty-string override would instead
+      // leave `hasCustomLine` true forever, showing a blank gap on the card.
+      patch[key] = key === 'custom' && !trimmed ? undefined : trimmed;
     });
     if (Object.keys(patch).length > 0) {
       const updated = await updateLineOverrides(entry.id, patch);

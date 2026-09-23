@@ -8,7 +8,11 @@ export type Memory = { label: string; entry: DiaryEntry };
 // week ago for accounts too new to have a yearly memory yet. All purely
 // local date math, no server needed.
 export function findOnThisDayMemory(entries: DiaryEntry[], now: Date = new Date()): Memory | null {
-  const byDate = groupEntriesByDate(entries);
+  // A locked entry is locked precisely so its content doesn't surface
+  // unguarded — showing it as a "1 year ago today" preview (or opening it
+  // straight from the home screen with no biometric check, unlike History)
+  // would defeat that.
+  const byDate = groupEntriesByDate(entries.filter((e) => !e.locked));
 
   const yearsAgo = [1, 2, 3].map((years) => ({
     label: `${years}년 전 오늘`,

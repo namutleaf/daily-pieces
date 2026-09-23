@@ -42,7 +42,15 @@ export type PaletteKey =
   | '그리움'
   | '행복'
   | '살짝 우울'
-  | '두근두근';
+  | '두근두근'
+  | '홀가분함'
+  | '답답함'
+  | '감사함'
+  | '심심함'
+  | '짜릿함'
+  | '몽글몽글함'
+  | '허전함'
+  | '벅참';
 
 // 'custom' is the optional free-typed sentence the user can add when the
 // diary is created; it only exists when lineOverrides.custom is set.
