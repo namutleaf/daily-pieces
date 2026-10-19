@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -33,6 +32,7 @@ import {
 } from '../utils/generateDiary';
 import { getUnlockedMilestones } from '../utils/milestones';
 import { checkLockSupport, authenticate } from '../utils/lock';
+import { showAlert } from '../utils/alert';
 import {
   getFontPreference,
   removeEntry,
@@ -122,7 +122,7 @@ export default function ResultScreen({ route, navigation }: Props) {
   const handlePickPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('권한이 필요해요', '사진 보관함 접근을 허용해주세요.');
+      showAlert('권한이 필요해요', '사진 보관함 접근을 허용해주세요.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -161,9 +161,9 @@ export default function ResultScreen({ route, navigation }: Props) {
     const stickerId = sticker.id;
     if (!isStickerUnlocked(pack, sticker, unlockedMilestones)) {
       if (!pack.free) {
-        Alert.alert('조금만 기다려주세요', '곧 새로운 스티커로 만나요 💌');
+        showAlert('조금만 기다려주세요', '곧 새로운 스티커로 만나요 💌');
       } else {
-        Alert.alert('아직 잠겨있어요', `${sticker.unlockAt}일 연속 기록을 달성하면 열려요!`);
+        showAlert('아직 잠겨있어요', `${sticker.unlockAt}일 연속 기록을 달성하면 열려요!`);
       }
       return;
     }
@@ -173,7 +173,7 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (existing) {
       next = current.filter((s) => s.instanceId !== existing.instanceId);
     } else if (current.length >= MAX_STICKERS_PER_ENTRY) {
-      Alert.alert('스티커는 최대 4개까지', '카드 하나에 최대 4개까지 붙일 수 있어요.');
+      showAlert('스티커는 최대 4개까지', '카드 하나에 최대 4개까지 붙일 수 있어요.');
       return;
     } else {
       const spot = DEFAULT_STICKER_SPOTS[current.length % DEFAULT_STICKER_SPOTS.length];
@@ -209,6 +209,10 @@ export default function ResultScreen({ route, navigation }: Props) {
     setUndoAction(null);
     if (action.type === 'sticker') {
       const current = entry.stickers ?? [];
+      if (current.length >= MAX_STICKERS_PER_ENTRY) {
+        showAlert('스티커는 최대 4개까지', '다른 스티커를 지운 뒤 다시 되돌려주세요.');
+        return;
+      }
       const updated = await updateStickers(entry.id, [...current, action.sticker]);
       if (updated) setEntry(updated);
     } else if (action.type === 'line') {
@@ -236,7 +240,7 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (nextLocked) {
       const support = await checkLockSupport();
       if (!support.supported) {
-        Alert.alert(
+        showAlert(
           '잠금을 사용할 수 없어요',
           support.reason === 'web-unsupported'
             ? '웹 미리보기에서는 일기 잠금을 설정할 수 없어요. 실제 기기에서 확인해주세요.'
@@ -343,7 +347,7 @@ export default function ResultScreen({ route, navigation }: Props) {
     const currentTags = effectiveHashtags(entry);
     const isDuplicate = currentTags.some((t) => t.key !== key && t.tag === normalized);
     if (isDuplicate) {
-      Alert.alert('이미 쓰고 있는 태그예요', '다른 항목에서 같은 해시태그를 쓰고 있어요. 다른 표현으로 바꿔보세요.');
+      showAlert('이미 쓰고 있는 태그예요', '다른 항목에서 같은 해시태그를 쓰고 있어요. 다른 표현으로 바꿔보세요.');
       return;
     }
     const previousTag = currentTags.find((t) => t.key === key)?.tag;
@@ -382,15 +386,15 @@ export default function ResultScreen({ route, navigation }: Props) {
       setWorking(true);
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('저장 권한이 필요해요', '사진 보관함 접근을 허용해주세요.');
+        showAlert('저장 권한이 필요해요', '사진 보관함 접근을 허용해주세요.');
         return;
       }
       const uri = await captureImage();
       if (!uri) return;
       await MediaLibrary.saveToLibraryAsync(uri);
-      Alert.alert('저장 완료', '카드 이미지를 사진 보관함에 저장했어요.');
+      showAlert('저장 완료', '카드 이미지를 사진 보관함에 저장했어요.');
     } catch (e) {
-      Alert.alert('저장 실패', '이미지를 저장하지 못했어요. 다시 시도해주세요.');
+      showAlert('저장 실패', '이미지를 저장하지 못했어요. 다시 시도해주세요.');
     } finally {
       setWorking(false);
     }
@@ -403,26 +407,29 @@ export default function ResultScreen({ route, navigation }: Props) {
       if (!uri) return;
       const canShare = await Sharing.isAvailableAsync();
       if (!canShare) {
-        Alert.alert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없어요.');
+        showAlert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없어요.');
         return;
       }
       await Sharing.shareAsync(uri, { mimeType: 'image/png' });
     } catch (e) {
-      Alert.alert('공유 실패', '공유 중 문제가 발생했어요. 다시 시도해주세요.');
+      showAlert('공유 실패', '공유 중 문제가 발생했어요. 다시 시도해주세요.');
     } finally {
       setWorking(false);
     }
   };
 
   const handleDelete = () => {
-    Alert.alert('삭제할까요?', '이 조각 일기를 삭제합니다.', [
+    showAlert('삭제할까요?', '이 조각 일기를 삭제합니다.', [
       { text: '취소', style: 'cancel' },
       {
         text: '삭제',
         style: 'destructive',
         onPress: async () => {
           await removeEntry(entry.id);
-          navigation.navigate('History');
+          // Reset rather than navigate: opened from the home "memory" card,
+          // navigate would push History on top of this Result, leaving the
+          // deleted entry one back-press away.
+          navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'History' }] });
         },
       },
     ]);
@@ -536,7 +543,10 @@ export default function ResultScreen({ route, navigation }: Props) {
         </View>
 
         <View style={styles.linkRow}>
-          <Pressable onPress={() => navigation.replace('ToneSelect')} hitSlop={8}>
+          <Pressable
+            onPress={() => navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'ToneSelect' }] })}
+            hitSlop={8}
+          >
             <Text style={styles.linkText}>다시 만들기</Text>
           </Pressable>
           <Text style={styles.linkDot}>·</Text>
@@ -584,7 +594,8 @@ export default function ResultScreen({ route, navigation }: Props) {
         animationType="fade"
         onRequestClose={() => setPickerKey(null)}
       >
-        <Pressable style={styles.backdrop} onPress={() => setPickerKey(null)}>
+        <View style={styles.backdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPickerKey(null)} />
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>어떤 표현으로 바꿔볼까요?</Text>
             {pickerKey &&
@@ -611,7 +622,7 @@ export default function ResultScreen({ route, navigation }: Props) {
                 );
               })}
           </View>
-        </Pressable>
+        </View>
       </Modal>
 
       <Modal
@@ -660,7 +671,8 @@ export default function ResultScreen({ route, navigation }: Props) {
         animationType="fade"
         onRequestClose={() => setHashtagKey(null)}
       >
-        <Pressable style={styles.backdrop} onPress={() => setHashtagKey(null)}>
+        <View style={styles.backdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setHashtagKey(null)} />
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>해시태그를 선택하거나 직접 입력해보세요</Text>
             {hashtagKey && (
@@ -714,7 +726,7 @@ export default function ResultScreen({ route, navigation }: Props) {
               </Pressable>
             </View>
           </View>
-        </Pressable>
+        </View>
       </Modal>
 
       <Modal
@@ -723,7 +735,8 @@ export default function ResultScreen({ route, navigation }: Props) {
         animationType="fade"
         onRequestClose={() => setBgPickerOpen(false)}
       >
-        <Pressable style={styles.backdrop} onPress={() => setBgPickerOpen(false)}>
+        <View style={styles.backdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setBgPickerOpen(false)} />
           <ScrollView style={styles.stickerSheet} contentContainerStyle={styles.stickerSheetContent}>
             <Text style={styles.sheetTitle}>배경을 골라보세요</Text>
             <View style={styles.swatchGrid}>
@@ -795,7 +808,7 @@ export default function ResultScreen({ route, navigation }: Props) {
               })}
             </View>
           </ScrollView>
-        </Pressable>
+        </View>
       </Modal>
 
       <Modal
@@ -804,7 +817,8 @@ export default function ResultScreen({ route, navigation }: Props) {
         animationType="fade"
         onRequestClose={() => setStickerSheetOpen(false)}
       >
-        <Pressable style={styles.backdrop} onPress={() => setStickerSheetOpen(false)}>
+        <View style={styles.backdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setStickerSheetOpen(false)} />
           <ScrollView style={styles.stickerSheet} contentContainerStyle={styles.stickerSheetContent}>
             <Text style={styles.sheetTitle}>스티커로 꾸며보세요</Text>
             <Text style={styles.stickerHint}>
@@ -844,7 +858,7 @@ export default function ResultScreen({ route, navigation }: Props) {
               </View>
             ))}
           </ScrollView>
-        </Pressable>
+        </View>
       </Modal>
     </SafeAreaView>
   );

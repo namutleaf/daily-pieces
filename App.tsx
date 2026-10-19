@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RootNavigator from './src/navigation/RootNavigator';
+import AlertHost from './src/components/AlertHost';
 import { FONT_ASSETS } from './src/data/fonts';
 import { theme } from './src/theme';
 import { getLockEnabled, authenticate } from './src/utils/lock';
@@ -77,6 +78,7 @@ export default function App() {
       ) : (
         <RootNavigator />
       )}
+      <AlertHost />
       <StatusBar style="dark" />
     </GestureHandlerRootView>
   );

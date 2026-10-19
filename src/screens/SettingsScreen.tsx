@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -7,6 +7,7 @@ import { theme } from '../theme';
 import { getNotifPref, setNotifPref, applyNotificationSchedule, NotifPref } from '../utils/notifications';
 import { getLockEnabled, setLockEnabled, checkLockSupport } from '../utils/lock';
 import { exportEntries, importEntries } from '../utils/backup';
+import { showAlert } from '../utils/alert';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -33,9 +34,9 @@ export default function SettingsScreen({ navigation }: Props) {
     const result = await applyNotificationSchedule(next);
     if (!result.ok) {
       if (result.reason === 'web-unsupported') {
-        Alert.alert('알림은 앱에서만', '웹 미리보기에서는 알림을 예약할 수 없어요. 실제 기기에서 확인해주세요.');
+        showAlert('알림은 앱에서만', '웹 미리보기에서는 알림을 예약할 수 없어요. 실제 기기에서 확인해주세요.');
       } else if (result.reason === 'permission-denied') {
-        Alert.alert('권한이 필요해요', '알림 권한을 허용해야 매일 알림을 받을 수 있어요.');
+        showAlert('권한이 필요해요', '알림 권한을 허용해야 매일 알림을 받을 수 있어요.');
         setNotif({ ...next, enabled: false });
         await setNotifPref({ ...next, enabled: false });
       }
@@ -54,11 +55,11 @@ export default function SettingsScreen({ navigation }: Props) {
       const support = await checkLockSupport();
       if (!support.supported) {
         if (support.reason === 'web-unsupported') {
-          Alert.alert('잠금은 앱에서만', '웹 미리보기에서는 생체 잠금을 설정할 수 없어요. 실제 기기에서 확인해주세요.');
+          showAlert('잠금은 앱에서만', '웹 미리보기에서는 생체 잠금을 설정할 수 없어요. 실제 기기에서 확인해주세요.');
         } else if (support.reason === 'no-hardware') {
-          Alert.alert('사용할 수 없어요', '이 기기에는 지문/얼굴 인식 기능이 없어요.');
+          showAlert('사용할 수 없어요', '이 기기에는 지문/얼굴 인식 기능이 없어요.');
         } else if (support.reason === 'not-enrolled') {
-          Alert.alert('등록이 필요해요', '기기 설정에서 지문 또는 얼굴 인식을 먼저 등록해주세요.');
+          showAlert('등록이 필요해요', '기기 설정에서 지문 또는 얼굴 인식을 먼저 등록해주세요.');
         }
         return;
       }
@@ -73,13 +74,13 @@ export default function SettingsScreen({ navigation }: Props) {
       const result = await exportEntries();
       if (!result.ok) {
         if (result.reason === 'web-unsupported') {
-          Alert.alert('내보내기는 앱에서만', '웹 미리보기에서는 파일을 내보낼 수 없어요. 실제 기기에서 확인해주세요.');
+          showAlert('내보내기는 앱에서만', '웹 미리보기에서는 파일을 내보낼 수 없어요. 실제 기기에서 확인해주세요.');
         } else if (result.reason === 'no-entries') {
-          Alert.alert('내보낼 일기가 없어요', '먼저 오늘의 조각을 모아보세요.');
+          showAlert('내보낼 일기가 없어요', '먼저 오늘의 조각을 모아보세요.');
         } else if (result.reason === 'share-unavailable') {
-          Alert.alert('공유 불가', '이 기기에서는 파일 공유 기능을 사용할 수 없어요.');
+          showAlert('공유 불가', '이 기기에서는 파일 공유 기능을 사용할 수 없어요.');
         } else {
-          Alert.alert('내보내기 실패', '백업 파일을 만들지 못했어요. 다시 시도해주세요.');
+          showAlert('내보내기 실패', '백업 파일을 만들지 못했어요. 다시 시도해주세요.');
         }
       }
     } finally {
@@ -92,15 +93,15 @@ export default function SettingsScreen({ navigation }: Props) {
     try {
       const result = await importEntries();
       if (result.ok) {
-        Alert.alert('가져오기 완료', `${result.added}개의 일기를 새로 불러왔어요.`);
+        showAlert('가져오기 완료', `${result.added}개의 일기를 새로 불러왔어요.`);
       } else if (result.reason === 'web-unsupported') {
-        Alert.alert('가져오기는 앱에서만', '웹 미리보기에서는 파일을 가져올 수 없어요. 실제 기기에서 확인해주세요.');
+        showAlert('가져오기는 앱에서만', '웹 미리보기에서는 파일을 가져올 수 없어요. 실제 기기에서 확인해주세요.');
       } else if (result.reason === 'canceled') {
         // user backed out of the file picker — nothing to say
       } else if (result.reason === 'invalid-file') {
-        Alert.alert('가져오기 실패', '이 파일은 Daily Pieces 백업 파일이 아닌 것 같아요.');
+        showAlert('가져오기 실패', '이 파일은 Daily Pieces 백업 파일이 아닌 것 같아요.');
       } else {
-        Alert.alert('가져오기 실패', '파일을 불러오지 못했어요. 다시 시도해주세요.');
+        showAlert('가져오기 실패', '파일을 불러오지 못했어요. 다시 시도해주세요.');
       }
     } finally {
       setBackupBusy(false);

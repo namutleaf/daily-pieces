@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -8,6 +8,7 @@ import { DiaryEntry } from '../types';
 import { theme } from '../theme';
 import { loadEntries } from '../utils/storage';
 import { authenticate, checkLockSupport } from '../utils/lock';
+import { showAlert } from '../utils/alert';
 import { effectiveHashtags } from '../utils/generateDiary';
 import CalendarGrid from '../components/CalendarGrid';
 
@@ -46,7 +47,7 @@ export default function HistoryScreen({ navigation }: Props) {
     if (entry.locked) {
       const support = await checkLockSupport();
       if (!support.supported) {
-        Alert.alert(
+        showAlert(
           '잠긴 일기예요',
           support.reason === 'web-unsupported'
             ? '웹 미리보기에서는 잠긴 일기를 열 수 없어요. 실제 기기에서 확인해주세요.'
