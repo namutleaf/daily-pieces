@@ -1,0 +1,316 @@
+import React, { useEffect, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+import { theme } from '../theme';
+import { getNotifPref, setNotifPref, applyNotificationSchedule, NotifPref } from '../utils/notifications';
+import { getLockEnabled, setLockEnabled, checkLockSupport } from '../utils/lock';
+import { exportEntries, importEntries } from '../utils/backup';
+import { showAlert } from '../utils/alert';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
+
+const HOUR_PRESETS = [8, 12, 18, 21, 22];
+
+export default function SettingsScreen({ navigation }: Props) {
+  const [notif, setNotif] = useState<NotifPref>({ enabled: false, hour: 21, minute: 0 });
+  const [lockEnabled, setLockEnabledState] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [backupBusy, setBackupBusy] = useState(false);
+
+  useEffect(() => {
+    Promise.all([getNotifPref(), getLockEnabled()]).then(([pref, lock]) => {
+      setNotif(pref);
+      setLockEnabledState(lock);
+      setLoaded(true);
+    });
+  }, []);
+
+  const handleToggleNotif = async (enabled: boolean) => {
+    const next = { ...notif, enabled };
+    setNotif(next);
+    await setNotifPref(next);
+    const result = await applyNotificationSchedule(next);
+    if (!result.ok) {
+      if (result.reason === 'web-unsupported') {
+        showAlert('알림은 앱에서만', '웹 미리보기에서는 알림을 예약할 수 없어요. 실제 기기에서 확인해주세요.');
+      } else if (result.reason === 'permission-denied') {
+        showAlert('권한이 필요해요', '알림 권한을 허용해야 매일 알림을 받을 수 있어요.');
+        setNotif({ ...next, enabled: false });
+        await setNotifPref({ ...next, enabled: false });
+      }
+    }
+  };
+
+  const handlePickHour = async (hour: number) => {
+    const next = { ...notif, hour };
+    setNotif(next);
+    await setNotifPref(next);
+    if (next.enabled) await applyNotificationSchedule(next);
+  };
+
+  const handleToggleLock = async (enabled: boolean) => {
+    if (enabled) {
+      const support = await checkLockSupport();
+      if (!support.supported) {
+        if (support.reason === 'web-unsupported') {
+          showAlert('잠금은 앱에서만', '웹 미리보기에서는 생체 잠금을 설정할 수 없어요. 실제 기기에서 확인해주세요.');
+        } else if (support.reason === 'no-hardware') {
+          showAlert('사용할 수 없어요', '이 기기에는 지문/얼굴 인식 기능이 없어요.');
+        } else if (support.reason === 'not-enrolled') {
+          showAlert('등록이 필요해요', '기기 설정에서 지문 또는 얼굴 인식을 먼저 등록해주세요.');
+        }
+        return;
+      }
+    }
+    setLockEnabledState(enabled);
+    await setLockEnabled(enabled);
+  };
+
+  const handleExport = async () => {
+    setBackupBusy(true);
+    try {
+      const result = await exportEntries();
+      if (!result.ok) {
+        if (result.reason === 'web-unsupported') {
+          showAlert('내보내기는 앱에서만', '웹 미리보기에서는 파일을 내보낼 수 없어요. 실제 기기에서 확인해주세요.');
+        } else if (result.reason === 'no-entries') {
+          showAlert('내보낼 일기가 없어요', '먼저 오늘의 조각을 모아보세요.');
+        } else if (result.reason === 'share-unavailable') {
+          showAlert('공유 불가', '이 기기에서는 파일 공유 기능을 사용할 수 없어요.');
+        } else {
+          showAlert('내보내기 실패', '백업 파일을 만들지 못했어요. 다시 시도해주세요.');
+        }
+      }
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handleImport = async () => {
+    setBackupBusy(true);
+    try {
+      const result = await importEntries();
+      if (result.ok) {
+        showAlert('가져오기 완료', `${result.added}개의 일기를 새로 불러왔어요.`);
+      } else if (result.reason === 'web-unsupported') {
+        showAlert('가져오기는 앱에서만', '웹 미리보기에서는 파일을 가져올 수 없어요. 실제 기기에서 확인해주세요.');
+      } else if (result.reason === 'canceled') {
+        // user backed out of the file picker — nothing to say
+      } else if (result.reason === 'invalid-file') {
+        showAlert('가져오기 실패', '이 파일은 Daily Pieces 백업 파일이 아닌 것 같아요.');
+      } else {
+        showAlert('가져오기 실패', '파일을 불러오지 못했어요. 다시 시도해주세요.');
+      }
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
+          <Text style={styles.backText}>← 뒤로</Text>
+        </Pressable>
+        <Text style={styles.title}>설정</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Pressable style={styles.linkRow} onPress={() => navigation.navigate('FontSettings')}>
+          <Text style={styles.linkText}>글꼴 설정</Text>
+          <Text style={styles.linkArrow}>›</Text>
+        </Pressable>
+
+        <View style={styles.section}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>매일 알림</Text>
+            <Switch
+              value={notif.enabled}
+              onValueChange={handleToggleNotif}
+              disabled={!loaded}
+              trackColor={{ true: theme.accent }}
+            />
+          </View>
+          <Text style={styles.sectionHint}>정해진 시간에 오늘의 조각을 모아보라고 알려드려요.</Text>
+          {notif.enabled && (
+            <View style={styles.hourRow}>
+              {HOUR_PRESETS.map((h) => {
+                const active = notif.hour === h;
+                return (
+                  <Pressable
+                    key={h}
+                    style={[styles.hourChip, active && styles.hourChipActive]}
+                    onPress={() => handlePickHour(h)}
+                  >
+                    <Text style={[styles.hourChipText, active && styles.hourChipTextActive]}>
+                      {h}시
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>잠금 기능</Text>
+            <Switch
+              value={lockEnabled}
+              onValueChange={handleToggleLock}
+              disabled={!loaded}
+              trackColor={{ true: theme.accent }}
+            />
+          </View>
+          <Text style={styles.sectionHint}>
+            {Platform.OS === 'web'
+              ? '지문/얼굴 인식은 실제 기기에서만 사용할 수 있어요.'
+              : '앱을 열 때마다 지문 또는 얼굴 인식으로 잠금을 해제해요.'}
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>데이터 백업</Text>
+          <Text style={styles.sectionHint}>
+            일기를 파일로 내보내 보관하거나, 백업 파일에서 다시 불러올 수 있어요.
+          </Text>
+          <View style={styles.backupRow}>
+            <Pressable
+              style={({ pressed }) => [styles.backupBtn, pressed && styles.pressed]}
+              onPress={handleExport}
+              disabled={backupBusy}
+            >
+              <Text style={styles.backupBtnText}>내보내기</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.backupBtn, pressed && styles.pressed]}
+              onPress={handleImport}
+              disabled={backupBusy}
+            >
+              <Text style={styles.backupBtnText}>가져오기</Text>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.bg,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  backText: {
+    fontSize: 15,
+    color: theme.inkSoft,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: theme.ink,
+  },
+  scroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+    gap: 20,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.surface,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: theme.border,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  linkText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.ink,
+  },
+  linkArrow: {
+    fontSize: 18,
+    color: theme.inkSoft,
+  },
+  section: {
+    backgroundColor: theme.surface,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: theme.border,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    gap: 8,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.ink,
+  },
+  sectionHint: {
+    fontSize: 12,
+    color: theme.inkSoft,
+    lineHeight: 18,
+  },
+  hourRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  hourChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: theme.accentSoft,
+  },
+  hourChipActive: {
+    backgroundColor: theme.accent,
+  },
+  hourChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.accent,
+  },
+  hourChipTextActive: {
+    color: '#fff',
+  },
+  backupRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  backupBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: theme.accentSoft,
+  },
+  backupBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.accent,
+  },
+  pressed: {
+    opacity: 0.8,
+  },
+});

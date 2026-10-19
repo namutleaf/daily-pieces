@@ -1,0 +1,538 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+import { CATEGORIES } from '../data/words';
+import { CategoryKey, DiaryEntry, Selections, WordItem } from '../types';
+import { theme } from '../theme';
+import WordCard from '../components/WordCard';
+import ProgressDots from '../components/ProgressDots';
+import MoodMessageModal from '../components/MoodMessageModal';
+import { buildDiaryEntry } from '../utils/generateDiary';
+import { pickMoodMessage } from '../data/moodMessages';
+import { detectToneFromText } from '../utils/detectTone';
+import { objectParticle, wasCopula, withParticleGwa } from '../utils/korean';
+import {
+  addCustomWord,
+  applyCustomLineAndTone,
+  getCustomWords,
+  getLastName,
+  removeCustomWord,
+  saveEntry,
+  setLastName,
+} from '../utils/storage';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
+
+const SET_SIZE = 8;
+const CUSTOM_EMOJI_OPTIONS = ['✨', '📌', '💭', '🌟', '🍀', '🎈', '🖋️', '📷'];
+
+// A user-typed word can't get the hand-crafted sentences the presets have,
+// but "~을 골랐다" (chose ~) read like a menu pick rather than a diary line
+// no matter the category — these read the way each category's own presets
+// do (weather/mood as a copula, person alongside "함께", place as a
+// setting, activity as a verb, moment as what happened), while still
+// working for arbitrary text since none of them require conjugating the
+// label itself. All end in "다" so tone-swapping keeps working.
+const CUSTOM_FRAGMENT: Record<CategoryKey, (label: string) => string> = {
+  weather: (label) => `오늘 날씨는 ${wasCopula(label)}`,
+  mood: (label) => `오늘 기분은 ${wasCopula(label)}`,
+  person: (label) => `${withParticleGwa(label)} 함께한 하루였다`,
+  place: (label) => `${label}에서 하루를 보냈다`,
+  activity: (label) => `${objectParticle(label)} 했다`,
+  moment: (label) => `특별한 순간은 ${wasCopula(label)}`,
+};
+
+function isCustomWordId(id: string) {
+  return id.startsWith('custom-');
+}
+
+export default function CardSelectScreen({ navigation, route }: Props) {
+  const { tone } = route.params;
+  const [roundIndex, setRoundIndex] = useState(0);
+  const [selections, setSelections] = useState<Partial<Selections>>({});
+  const [personName, setPersonName] = useState<string | undefined>(undefined);
+  const [busy, setBusy] = useState(false);
+  const [namePrompt, setNamePrompt] = useState<WordItem | null>(null);
+  const [nameInput, setNameInput] = useState('');
+  const [pendingEntry, setPendingEntry] = useState<DiaryEntry | null>(null);
+  const [moodMessage, setMoodMessage] = useState('');
+  const [setIndex, setSetIndex] = useState(0);
+  const [customInput, setCustomInput] = useState('');
+  const [customWords, setCustomWords] = useState<WordItem[]>([]);
+  const [addWordOpen, setAddWordOpen] = useState(false);
+  const [newWordLabel, setNewWordLabel] = useState('');
+  const [newWordEmoji, setNewWordEmoji] = useState(CUSTOM_EMOJI_OPTIONS[0]);
+  const [deleteCandidate, setDeleteCandidate] = useState<WordItem | null>(null);
+
+  const category = CATEGORIES[roundIndex];
+  const isLastRound = roundIndex === CATEGORIES.length - 1;
+  const totalSets = Math.ceil(category.words.length / SET_SIZE);
+  const presetVisibleWords = category.words.slice(setIndex * SET_SIZE, setIndex * SET_SIZE + SET_SIZE);
+  // Custom cards always show alongside whichever preset page is visible,
+  // so a word the user added is never buried behind "다른 카드 보기".
+  const visibleWords = [...presetVisibleWords, ...customWords];
+  const isLastSet = setIndex >= totalSets - 1;
+
+  useEffect(() => {
+    setSetIndex(0);
+    getCustomWords().then((map) => setCustomWords(map[category.key] ?? []));
+  }, [category.key, roundIndex]);
+
+  const commitSelection = useCallback(
+    (word: WordItem, name: string | undefined) => {
+      setBusy(true);
+      const effectivePersonName = category.key === 'person' ? name : personName;
+      if (category.key === 'person') setPersonName(name);
+
+      const nextSelections: Selections = {
+        ...(selections as Selections),
+        [category.key as CategoryKey]: word,
+      };
+      setSelections(nextSelections);
+
+      setTimeout(async () => {
+        if (isLastRound) {
+          const entry = buildDiaryEntry(nextSelections, tone, effectivePersonName);
+          await saveEntry(entry);
+          setMoodMessage(pickMoodMessage(entry.paletteKey));
+          setCustomInput('');
+          setPendingEntry(entry);
+          setBusy(false);
+        } else {
+          setRoundIndex((i) => i + 1);
+          setBusy(false);
+        }
+      }, 260);
+    },
+    [category.key, isLastRound, navigation, personName, selections, tone]
+  );
+
+  const handlePick = useCallback(
+    async (word: WordItem) => {
+      if (busy) return;
+      if (category.key === 'person' && word.nameable) {
+        const last = await getLastName(word.id);
+        setNameInput(last ?? '');
+        setNamePrompt(word);
+        return;
+      }
+      commitSelection(word, undefined);
+    },
+    [busy, category.key, commitSelection]
+  );
+
+  const handleNameSkip = () => {
+    if (!namePrompt) return;
+    const word = namePrompt;
+    setNamePrompt(null);
+    commitSelection(word, undefined);
+  };
+
+  const handleNameConfirm = async () => {
+    if (!namePrompt) return;
+    const word = namePrompt;
+    const trimmed = nameInput.trim();
+    setNamePrompt(null);
+    if (trimmed) {
+      await setLastName(word.id, trimmed);
+      commitSelection(word, trimmed);
+    } else {
+      commitSelection(word, undefined);
+    }
+  };
+
+  const handleOpenAddWord = () => {
+    setNewWordLabel('');
+    setNewWordEmoji(CUSTOM_EMOJI_OPTIONS[0]);
+    setAddWordOpen(true);
+  };
+
+  const handleConfirmAddWord = async () => {
+    const label = newWordLabel.trim();
+    if (!label) return;
+    const word: WordItem = {
+      id: `custom-${category.key}-${Date.now()}`,
+      label,
+      emoji: newWordEmoji,
+      fragment: CUSTOM_FRAGMENT[category.key](label),
+    };
+    await addCustomWord(category.key, word);
+    setCustomWords((prev) => [...prev, word]);
+    setAddWordOpen(false);
+  };
+
+  const handleLongPressWord = (word: WordItem) => {
+    if (!isCustomWordId(word.id)) return;
+    setDeleteCandidate(word);
+  };
+
+  const handleConfirmDeleteWord = async () => {
+    if (!deleteCandidate) return;
+    await removeCustomWord(category.key, deleteCandidate.id);
+    setCustomWords((prev) => prev.filter((w) => w.id !== deleteCandidate.id));
+    setDeleteCandidate(null);
+  };
+
+  const handleContinueToResult = async () => {
+    if (!pendingEntry) return;
+    const trimmed = customInput.trim();
+    if (!trimmed) {
+      navigation.replace('Result', { entry: pendingEntry });
+      return;
+    }
+    const tone = detectToneFromText(trimmed);
+    const updated = await applyCustomLineAndTone(pendingEntry.id, tone, trimmed);
+    navigation.replace('Result', { entry: updated ?? pendingEntry });
+  };
+
+  const handleBack = () => {
+    if (roundIndex === 0) {
+      navigation.goBack();
+      return;
+    }
+    setRoundIndex((i) => i - 1);
+  };
+
+  const selectedId = selections[category.key as CategoryKey]?.id;
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.topBar}>
+        <Pressable onPress={handleBack} hitSlop={12}>
+          <Text style={styles.backText}>{roundIndex === 0 ? '취소' : '이전'}</Text>
+        </Pressable>
+        <Text style={styles.stepText}>
+          {roundIndex + 1} / {CATEGORIES.length}
+        </Text>
+      </View>
+
+      <ProgressDots total={CATEGORIES.length} current={roundIndex} />
+
+      <View style={styles.questionWrap}>
+        <Text style={styles.categoryLabel}>{category.title}</Text>
+        <Text style={styles.question}>{category.question}</Text>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.grid}
+        showsVerticalScrollIndicator={false}
+      >
+        {visibleWords.map((word) => (
+          <WordCard
+            key={word.id}
+            word={word}
+            selected={word.id === selectedId}
+            disabled={busy}
+            onPress={handlePick}
+            onLongPress={handleLongPressWord}
+          />
+        ))}
+
+        {totalSets > 1 && (
+          <Pressable
+            style={({ pressed }) => [styles.moreBtn, pressed && styles.pressed]}
+            onPress={() => setSetIndex(isLastSet ? 0 : setIndex + 1)}
+          >
+            <Text style={styles.moreBtnText}>
+              {isLastSet ? '처음부터 다시 보기' : '다른 카드 보기'}
+            </Text>
+          </Pressable>
+        )}
+
+        <Pressable
+          style={({ pressed }) => [styles.moreBtn, pressed && styles.pressed]}
+          onPress={handleOpenAddWord}
+        >
+          <Text style={styles.moreBtnText}>+ 나만의 카드 추가</Text>
+        </Pressable>
+      </ScrollView>
+
+      <Modal visible={namePrompt !== null} transparent animationType="fade">
+        <View style={styles.backdrop}>
+          <View style={styles.promptCard}>
+            <Text style={styles.promptEmoji}>{namePrompt?.emoji}</Text>
+            <Text style={styles.promptTitle}>{namePrompt?.label}의 이름이 있나요?</Text>
+            <Text style={styles.promptSub}>입력하면 일기에 이름이 들어가요 (선택)</Text>
+            <TextInput
+              style={styles.promptInput}
+              value={nameInput}
+              onChangeText={setNameInput}
+              placeholder="예: 초코"
+              placeholderTextColor={theme.inkSoft}
+              autoFocus
+            />
+            <View style={styles.promptActions}>
+              <Pressable
+                style={({ pressed }) => [styles.promptBtn, pressed && styles.pressed]}
+                onPress={handleNameSkip}
+              >
+                <Text style={styles.promptBtnText}>건너뛰기</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.promptBtn,
+                  styles.promptBtnPrimary,
+                  pressed && styles.pressed,
+                ]}
+                onPress={handleNameConfirm}
+              >
+                <Text style={styles.promptBtnPrimaryText}>확인</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {pendingEntry && (
+        <MoodMessageModal
+          visible={pendingEntry !== null}
+          paletteKey={pendingEntry.paletteKey}
+          message={moodMessage}
+          customText={customInput}
+          onChangeCustomText={setCustomInput}
+          onContinue={handleContinueToResult}
+        />
+      )}
+
+      <Modal visible={addWordOpen} transparent animationType="fade" onRequestClose={() => setAddWordOpen(false)}>
+        <View style={styles.backdrop}>
+          <View style={styles.promptCard}>
+            <Text style={styles.promptTitle}>나만의 카드 추가</Text>
+            <Text style={styles.promptSub}>{category.title} 카테고리에 새 단어를 추가해요</Text>
+            <View style={styles.emojiPickerRow}>
+              {CUSTOM_EMOJI_OPTIONS.map((emoji) => (
+                <Pressable
+                  key={emoji}
+                  style={[styles.emojiOption, newWordEmoji === emoji && styles.emojiOptionActive]}
+                  onPress={() => setNewWordEmoji(emoji)}
+                >
+                  <Text style={styles.emojiOptionText}>{emoji}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <TextInput
+              style={styles.promptInput}
+              value={newWordLabel}
+              onChangeText={setNewWordLabel}
+              placeholder="예: 두근두근한 만남"
+              placeholderTextColor={theme.inkSoft}
+              autoFocus
+            />
+            <View style={styles.promptActions}>
+              <Pressable
+                style={({ pressed }) => [styles.promptBtn, pressed && styles.pressed]}
+                onPress={() => setAddWordOpen(false)}
+              >
+                <Text style={styles.promptBtnText}>취소</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.promptBtn,
+                  styles.promptBtnPrimary,
+                  pressed && styles.pressed,
+                ]}
+                onPress={handleConfirmAddWord}
+                disabled={!newWordLabel.trim()}
+              >
+                <Text style={styles.promptBtnPrimaryText}>추가</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={deleteCandidate !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteCandidate(null)}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.promptCard}>
+            <Text style={styles.promptEmoji}>{deleteCandidate?.emoji}</Text>
+            <Text style={styles.promptTitle}>'{deleteCandidate?.label}' 카드를 삭제할까요?</Text>
+            <Text style={styles.promptSub}>내가 추가한 카드는 다시 만들 수 있어요</Text>
+            <View style={styles.promptActions}>
+              <Pressable
+                style={({ pressed }) => [styles.promptBtn, pressed && styles.pressed]}
+                onPress={() => setDeleteCandidate(null)}
+              >
+                <Text style={styles.promptBtnText}>취소</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.promptBtn,
+                  styles.promptBtnPrimary,
+                  pressed && styles.pressed,
+                ]}
+                onPress={handleConfirmDeleteWord}
+              >
+                <Text style={styles.promptBtnPrimaryText}>삭제</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.bg,
+    paddingHorizontal: 24,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  backText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.inkSoft,
+  },
+  stepText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.inkSoft,
+  },
+  questionWrap: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  categoryLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.accent,
+    letterSpacing: 2,
+    marginBottom: 6,
+  },
+  question: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.ink,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    paddingBottom: 28,
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  promptCard: {
+    width: '100%',
+    backgroundColor: theme.surface,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+  },
+  promptEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  promptTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: theme.ink,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  promptSub: {
+    fontSize: 13,
+    color: theme.inkSoft,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  emojiPickerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  emojiOption: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.bg,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  emojiOptionActive: {
+    borderColor: theme.accent,
+    backgroundColor: theme.accentSoft,
+  },
+  emojiOptionText: {
+    fontSize: 18,
+  },
+  promptInput: {
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: theme.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: theme.ink,
+    marginBottom: 18,
+    outlineWidth: 0,
+  },
+  promptActions: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  promptBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: theme.bg,
+  },
+  promptBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.inkSoft,
+  },
+  promptBtnPrimary: {
+    backgroundColor: theme.accent,
+  },
+  promptBtnPrimaryText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  pressed: {
+    opacity: 0.85,
+  },
+  moreBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: theme.border,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  moreBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.accent,
+  },
+});
