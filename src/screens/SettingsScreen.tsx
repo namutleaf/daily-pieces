@@ -8,6 +8,9 @@ import { getNotifPref, setNotifPref, applyNotificationSchedule, NotifPref } from
 import { getLockEnabled, setLockEnabled, checkLockSupport } from '../utils/lock';
 import { exportEntries, importEntries } from '../utils/backup';
 import { showAlert } from '../utils/alert';
+import { getTonePreference, setTonePreference } from '../utils/storage';
+import { TONE_OPTIONS } from '../data/tones';
+import { ToneKey } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -18,14 +21,23 @@ export default function SettingsScreen({ navigation }: Props) {
   const [lockEnabled, setLockEnabledState] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
+  const [tone, setTone] = useState<ToneKey>('plain');
 
   useEffect(() => {
-    Promise.all([getNotifPref(), getLockEnabled()]).then(([pref, lock]) => {
+    Promise.all([getNotifPref(), getLockEnabled(), getTonePreference()]).then(([pref, lock, savedTone]) => {
       setNotif(pref);
       setLockEnabledState(lock);
+      setTone(savedTone);
       setLoaded(true);
     });
   }, []);
+
+  const handlePickTone = async (key: ToneKey) => {
+    setTone(key);
+    await setTonePreference(key);
+  };
+
+  const toneSample = TONE_OPTIONS.find((t) => t.key === tone)?.sample ?? TONE_OPTIONS[0].sample;
 
   const handleToggleNotif = async (enabled: boolean) => {
     const next = { ...notif, enabled };
@@ -119,6 +131,26 @@ export default function SettingsScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>일기 말투</Text>
+          <Text style={styles.sectionHint}>새로 만드는 일기에 쓸 말투예요. 문장은 일기를 만든 뒤에도 직접 고칠 수 있어요.</Text>
+          <View style={styles.hourRow}>
+            {TONE_OPTIONS.map((opt) => {
+              const active = tone === opt.key;
+              return (
+                <Pressable
+                  key={opt.key}
+                  style={[styles.hourChip, active && styles.hourChipActive]}
+                  onPress={() => handlePickTone(opt.key)}
+                >
+                  <Text style={[styles.hourChipText, active && styles.hourChipTextActive]}>{opt.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.toneSample}>예) {toneSample}</Text>
+        </View>
+
         <Pressable style={styles.linkRow} onPress={() => navigation.navigate('FontSettings')}>
           <Text style={styles.linkText}>글꼴 설정</Text>
           <Text style={styles.linkArrow}>›</Text>
@@ -269,6 +301,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.inkSoft,
     lineHeight: 18,
+  },
+  toneSample: {
+    fontSize: 13,
+    color: theme.ink,
+    marginTop: 4,
   },
   hourRow: {
     flexDirection: 'row',

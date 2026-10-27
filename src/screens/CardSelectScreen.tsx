@@ -4,23 +4,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { CATEGORIES } from '../data/words';
-import { CategoryKey, DiaryEntry, Selections, WordItem } from '../types';
+import { CategoryKey, DiaryEntry, Selections, ToneKey, WordItem } from '../types';
 import { theme } from '../theme';
 import WordCard from '../components/WordCard';
 import ProgressDots from '../components/ProgressDots';
 import MoodMessageModal from '../components/MoodMessageModal';
 import { buildDiaryEntry } from '../utils/generateDiary';
 import { pickMoodMessage } from '../data/moodMessages';
-import { detectToneFromText } from '../utils/detectTone';
 import { objectParticle, wasCopula, withParticleGwa } from '../utils/korean';
 import {
   addCustomWord,
-  applyCustomLineAndTone,
   getCustomWords,
   getLastName,
+  getTonePreference,
   removeCustomWord,
   saveEntry,
   setLastName,
+  updateLineOverrides,
 } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
@@ -48,8 +48,10 @@ function isCustomWordId(id: string) {
   return id.startsWith('custom-');
 }
 
-export default function CardSelectScreen({ navigation, route }: Props) {
-  const { tone } = route.params;
+export default function CardSelectScreen({ navigation }: Props) {
+  // A one-time setting rather than a step before every diary — picking a
+  // tone each day added a screen to what should be a 30-second flow.
+  const [tone, setTone] = useState<ToneKey>('plain');
   const [roundIndex, setRoundIndex] = useState(0);
   const [selections, setSelections] = useState<Partial<Selections>>({});
   const [personName, setPersonName] = useState<string | undefined>(undefined);
@@ -74,6 +76,10 @@ export default function CardSelectScreen({ navigation, route }: Props) {
   // so a word the user added is never buried behind "다른 카드 보기".
   const visibleWords = [...presetVisibleWords, ...customWords];
   const isLastSet = setIndex >= totalSets - 1;
+
+  useEffect(() => {
+    getTonePreference().then(setTone);
+  }, []);
 
   useEffect(() => {
     setSetIndex(0);
@@ -182,8 +188,7 @@ export default function CardSelectScreen({ navigation, route }: Props) {
       navigation.replace('Result', { entry: pendingEntry });
       return;
     }
-    const tone = detectToneFromText(trimmed);
-    const updated = await applyCustomLineAndTone(pendingEntry.id, tone, trimmed);
+    const updated = await updateLineOverrides(pendingEntry.id, { custom: trimmed });
     navigation.replace('Result', { entry: updated ?? pendingEntry });
   };
 

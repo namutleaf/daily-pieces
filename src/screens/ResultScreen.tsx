@@ -11,9 +11,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
-import { captureRef } from 'react-native-view-shot';
-import * as MediaLibrary from 'expo-media-library';
-import * as Sharing from 'expo-sharing';
 import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../navigation/types';
 import { theme, MOOD_PALETTES, PALETTE_KEYS } from '../theme';
@@ -22,7 +19,7 @@ import IllustrationBackground from '../components/IllustrationBackground';
 import { CategoryKey, DiaryEntry, LineKey, PaletteKey, PlacedSticker } from '../types';
 import { getFontOption } from '../data/fonts';
 import { ILLUSTRATION_OPTIONS } from '../data/illustrations';
-import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS, StickerItem, StickerPack, isStickerUnlocked } from '../data/stickers';
+import { MAX_STICKERS_PER_ENTRY, STICKER_PACKS, StickerItem, isStickerUnlocked } from '../data/stickers';
 import {
   applyTone,
   CLOSER_OPTIONS,
@@ -33,6 +30,8 @@ import {
 import { getUnlockedMilestones } from '../utils/milestones';
 import { checkLockSupport, authenticate } from '../utils/lock';
 import { showAlert } from '../utils/alert';
+import { saveCardImage, shareCardImage } from '../utils/cardImage';
+import { dateKeyFromTimestamp } from '../utils/stats';
 import {
   getFontPreference,
   removeEntry,
@@ -157,14 +156,10 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (updated) setEntry(updated);
   };
 
-  const handleToggleSticker = async (sticker: StickerItem, pack: StickerPack) => {
+  const handleToggleSticker = async (sticker: StickerItem) => {
     const stickerId = sticker.id;
-    if (!isStickerUnlocked(pack, sticker, unlockedMilestones)) {
-      if (!pack.free) {
-        showAlert('조금만 기다려주세요', '곧 새로운 스티커로 만나요 💌');
-      } else {
-        showAlert('아직 잠겨있어요', `${sticker.unlockAt}일 연속 기록을 달성하면 열려요!`);
-      }
+    if (!isStickerUnlocked(sticker, unlockedMilestones)) {
+      showAlert('아직 잠겨있어요', `${sticker.unlockAt}일 연속 기록을 달성하면 열려요!`);
       return;
     }
     const current = entry.stickers ?? [];
@@ -376,46 +371,18 @@ export default function ResultScreen({ route, navigation }: Props) {
     }
   };
 
-  const captureImage = async () => {
-    if (!cardRef.current) return null;
-    return captureRef(cardRef, { format: 'png', quality: 1 });
-  };
+  const imageFileName = `daily-pieces-${dateKeyFromTimestamp(entry.createdAt)}.png`;
 
   const handleSaveImage = async () => {
-    try {
-      setWorking(true);
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        showAlert('저장 권한이 필요해요', '사진 보관함 접근을 허용해주세요.');
-        return;
-      }
-      const uri = await captureImage();
-      if (!uri) return;
-      await MediaLibrary.saveToLibraryAsync(uri);
-      showAlert('저장 완료', '카드 이미지를 사진 보관함에 저장했어요.');
-    } catch (e) {
-      showAlert('저장 실패', '이미지를 저장하지 못했어요. 다시 시도해주세요.');
-    } finally {
-      setWorking(false);
-    }
+    setWorking(true);
+    await saveCardImage(cardRef, imageFileName);
+    setWorking(false);
   };
 
   const handleShare = async () => {
-    try {
-      setWorking(true);
-      const uri = await captureImage();
-      if (!uri) return;
-      const canShare = await Sharing.isAvailableAsync();
-      if (!canShare) {
-        showAlert('공유 불가', '이 기기에서는 공유 기능을 사용할 수 없어요.');
-        return;
-      }
-      await Sharing.shareAsync(uri, { mimeType: 'image/png' });
-    } catch (e) {
-      showAlert('공유 실패', '공유 중 문제가 발생했어요. 다시 시도해주세요.');
-    } finally {
-      setWorking(false);
-    }
+    setWorking(true);
+    await shareCardImage(cardRef, imageFileName);
+    setWorking(false);
   };
 
   const handleDelete = () => {
@@ -544,7 +511,7 @@ export default function ResultScreen({ route, navigation }: Props) {
 
         <View style={styles.linkRow}>
           <Pressable
-            onPress={() => navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'ToneSelect' }] })}
+            onPress={() => navigation.reset({ index: 1, routes: [{ name: 'Home' }, { name: 'CardSelect' }] })}
             hitSlop={8}
           >
             <Text style={styles.linkText}>다시 만들기</Text>
@@ -830,12 +797,11 @@ export default function ResultScreen({ route, navigation }: Props) {
               <View key={pack.id} style={styles.stickerPack}>
                 <View style={styles.stickerPackHeader}>
                   <Text style={styles.stickerPackTitle}>{pack.title}</Text>
-                  {!pack.free && <Text style={styles.stickerPackSoon}>Soon</Text>}
                 </View>
                 <View style={styles.stickerGrid}>
                   {pack.stickers.map((sticker) => {
                     const isActive = (entry.stickers ?? []).some((s) => s.stickerId === sticker.id);
-                    const unlocked = isStickerUnlocked(pack, sticker, unlockedMilestones);
+                    const unlocked = isStickerUnlocked(sticker, unlockedMilestones);
                     return (
                       <Pressable
                         key={sticker.id}
@@ -845,7 +811,7 @@ export default function ResultScreen({ route, navigation }: Props) {
                           !unlocked && styles.stickerItemLocked,
                           pressed && styles.sheetOptionPressed,
                         ]}
-                        onPress={() => handleToggleSticker(sticker, pack)}
+                        onPress={() => handleToggleSticker(sticker)}
                       >
                         <Text style={styles.stickerItemEmoji}>{sticker.emoji}</Text>
                         <Text style={styles.stickerItemLabel}>
@@ -1233,16 +1199,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: theme.ink,
-  },
-  stickerPackSoon: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: theme.inkSoft,
-    backgroundColor: theme.bg,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    overflow: 'hidden',
   },
   stickerGrid: {
     flexDirection: 'row',

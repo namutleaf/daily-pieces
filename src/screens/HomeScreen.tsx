@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -11,6 +11,8 @@ import { computeStreak } from '../utils/stats';
 import { findOnThisDayMemory, Memory } from '../utils/memories';
 import { checkAndUnlockMilestones } from '../utils/milestones';
 import { findStickerById } from '../data/stickers';
+import { findPatterns, PatternResult } from '../utils/insights';
+import PatternCard from '../components/PatternCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -18,6 +20,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [streak, setStreak] = useState(0);
   const [memory, setMemory] = useState<Memory | null>(null);
   const [celebrateMilestone, setCelebrateMilestone] = useState<number | null>(null);
+  const [patterns, setPatterns] = useState<PatternResult | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -27,6 +30,7 @@ export default function HomeScreen({ navigation }: Props) {
         const currentStreak = computeStreak(entries);
         setStreak(currentStreak);
         setMemory(findOnThisDayMemory(entries));
+        setPatterns(findPatterns(entries));
 
         const newlyUnlocked = await checkAndUnlockMilestones(currentStreak);
         if (!cancelled && newlyUnlocked.length > 0) {
@@ -48,10 +52,10 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={styles.topBar}>
         <Pressable
           style={({ pressed }) => pressed && styles.pressed}
-          onPress={() => navigation.navigate('Stats')}
+          onPress={() => navigation.navigate('Insights')}
           hitSlop={12}
         >
-          <Text style={styles.settingsText}>📊 통계</Text>
+          <Text style={styles.settingsText}>🔍 나의 조각들</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => pressed && styles.pressed}
@@ -62,16 +66,37 @@ export default function HomeScreen({ navigation }: Props) {
         </Pressable>
       </View>
 
-      <View style={styles.hero}>
+      <ScrollView style={styles.heroScroll} contentContainerStyle={styles.hero} showsVerticalScrollIndicator={false}>
         <Text style={styles.kicker}>DAILY PIECES</Text>
-        <Text style={styles.title}>단어 조각으로{'\n'}오늘을 기록해요</Text>
+        <Text style={styles.title}>30초면 충분한{'\n'}오늘의 기록</Text>
         <Text style={styles.subtitle}>
-          카드를 하나씩 고르면{'\n'}짧은 일기가 완성돼요
+          카드 몇 장이면 기록 끝.{'\n'}쌓일수록 나를 더 알게 돼요
         </Text>
         {streak > 0 && (
           <View style={styles.streakBadge}>
             <Text style={styles.streakText}>🔥 {streak}일 연속 기록 중</Text>
           </View>
+        )}
+
+        {patterns?.status === 'ready' && patterns.patterns.length > 0 && (
+          <Pressable
+            style={({ pressed }) => [styles.teaser, pressed && styles.pressed]}
+            onPress={() => navigation.navigate('Insights')}
+          >
+            <Text style={styles.teaserLabel}>🔍 발견한 패턴</Text>
+            <PatternCard pattern={patterns.patterns[0]} />
+          </Pressable>
+        )}
+        {patterns?.status === 'collecting' && patterns.have > 0 && (
+          <Pressable
+            style={({ pressed }) => [styles.memoryCard, pressed && styles.pressed]}
+            onPress={() => navigation.navigate('Insights')}
+          >
+            <Text style={styles.memoryLabel}>🔍 나만의 패턴 찾는 중</Text>
+            <Text style={styles.memoryText}>
+              조각 {patterns.need - patterns.have}개만 더 모으면 내 기분과 함께 자주 나타나는 조각을 알려드려요
+            </Text>
+          </Pressable>
         )}
 
         {memory && (
@@ -85,12 +110,12 @@ export default function HomeScreen({ navigation }: Props) {
             </Text>
           </Pressable>
         )}
-      </View>
+      </ScrollView>
 
       <View style={styles.actions}>
         <Pressable
           style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
-          onPress={() => navigation.navigate('ToneSelect')}
+          onPress={() => navigation.navigate('CardSelect')}
         >
           <Text style={styles.primaryBtnText}>오늘의 조각 모으기</Text>
         </Pressable>
@@ -140,8 +165,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.inkSoft,
   },
+  heroScroll: {
+    flex: 1,
+  },
   hero: {
-    marginTop: 24,
+    paddingTop: 24,
+    paddingBottom: 20,
+  },
+  teaser: {
+    marginTop: 16,
+    gap: 8,
+  },
+  teaserLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.accent,
   },
   kicker: {
     fontSize: 13,
@@ -196,6 +234,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 12,
+    paddingTop: 12,
   },
   primaryBtn: {
     backgroundColor: theme.accent,

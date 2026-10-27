@@ -6,6 +6,7 @@ import { FontKey } from '../data/fonts';
 const KEY = 'daily_pieces_entries_v1';
 const NAMES_KEY = 'daily_pieces_last_names_v1';
 const FONT_KEY = 'daily_pieces_font_pref_v1';
+const TONE_KEY = 'daily_pieces_tone_pref_v1';
 const CUSTOM_WORDS_KEY = 'daily_pieces_custom_words_v1';
 
 export async function loadEntries(): Promise<DiaryEntry[]> {
@@ -87,26 +88,6 @@ export async function updateHashtagOverrides(
   const next = entries.map((e) => {
     if (e.id !== id) return e;
     updated = { ...e, hashtagOverrides: { ...e.hashtagOverrides, ...patch } };
-    return updated;
-  });
-  await AsyncStorage.setItem(KEY, JSON.stringify(next));
-  return updated;
-}
-
-// Used once, right when a diary is created: the user's own typed sentence
-// sets the tone for the whole entry, and is appended as its own line.
-export async function applyCustomLineAndTone(
-  id: string,
-  tone: ToneKey,
-  customText: string
-): Promise<DiaryEntry | null> {
-  const entries = await loadEntries();
-  let updated: DiaryEntry | null = null;
-  const next = entries.map((e) => {
-    if (e.id !== id) return e;
-    const lineOverrides = { ...e.lineOverrides, custom: customText };
-    const diaryText = composeDiaryText(e.selections, lineOverrides, e.closerFragment, tone, e.personName);
-    updated = { ...e, tone, lineOverrides, diaryText };
     return updated;
   });
   await AsyncStorage.setItem(KEY, JSON.stringify(next));
@@ -212,6 +193,23 @@ export async function getFontPreference(): Promise<FontKey> {
 export async function setFontPreference(key: FontKey): Promise<void> {
   try {
     await AsyncStorage.setItem(FONT_KEY, key);
+  } catch {
+    // best-effort only
+  }
+}
+
+export async function getTonePreference(): Promise<ToneKey> {
+  try {
+    const raw = await AsyncStorage.getItem(TONE_KEY);
+    return (raw as ToneKey) ?? 'plain';
+  } catch {
+    return 'plain';
+  }
+}
+
+export async function setTonePreference(key: ToneKey): Promise<void> {
+  try {
+    await AsyncStorage.setItem(TONE_KEY, key);
   } catch {
     // best-effort only
   }
