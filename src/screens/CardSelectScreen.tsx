@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -8,6 +8,7 @@ import { CategoryKey, DiaryEntry, Selections, ToneKey, WordItem } from '../types
 import { theme } from '../theme';
 import WordCard from '../components/WordCard';
 import ProgressDots from '../components/ProgressDots';
+import SwipePager from '../components/SwipePager';
 import MoodMessageModal from '../components/MoodMessageModal';
 import { buildDiaryEntry } from '../utils/generateDiary';
 import { pickMoodMessage } from '../data/moodMessages';
@@ -26,6 +27,15 @@ import {
 type Props = NativeStackScreenProps<RootStackParamList, 'CardSelect'>;
 
 const SET_SIZE = 8;
+const CARDS_PER_ROW = 4;
+const SCREEN_PADDING = 24;
+
+// Invisible cells that complete a partial last row, so space-between keeps
+// cards in their columns instead of spreading a short row edge to edge.
+function rowFillers(count: number) {
+  const missing = (CARDS_PER_ROW - (count % CARDS_PER_ROW)) % CARDS_PER_ROW;
+  return Array.from({ length: missing }, (_, i) => <View key={`filler-${i}`} style={styles.filler} />);
+}
 const CUSTOM_EMOJI_OPTIONS = ['✨', '📌', '💭', '🌟', '🍀', '🎈', '🖋️', '📷'];
 
 // A user-typed word can't get the hand-crafted sentences the presets have,
@@ -60,7 +70,6 @@ export default function CardSelectScreen({ navigation }: Props) {
   const [nameInput, setNameInput] = useState('');
   const [pendingEntry, setPendingEntry] = useState<DiaryEntry | null>(null);
   const [moodMessage, setMoodMessage] = useState('');
-  const [setIndex, setSetIndex] = useState(0);
   const [customInput, setCustomInput] = useState('');
   const [customWords, setCustomWords] = useState<WordItem[]>([]);
   const [addWordOpen, setAddWordOpen] = useState(false);
@@ -70,19 +79,21 @@ export default function CardSelectScreen({ navigation }: Props) {
 
   const category = CATEGORIES[roundIndex];
   const isLastRound = roundIndex === CATEGORIES.length - 1;
-  const totalSets = Math.ceil(category.words.length / SET_SIZE);
-  const presetVisibleWords = category.words.slice(setIndex * SET_SIZE, setIndex * SET_SIZE + SET_SIZE);
-  // Custom cards always show alongside whichever preset page is visible,
-  // so a word the user added is never buried behind "다른 카드 보기".
-  const visibleWords = [...presetVisibleWords, ...customWords];
-  const isLastSet = setIndex >= totalSets - 1;
+  const presetPages = useMemo(() => {
+    const pages: WordItem[][] = [];
+    for (let i = 0; i < category.words.length; i += SET_SIZE) pages.push(category.words.slice(i, i + SET_SIZE));
+    return pages;
+  }, [category]);
+  // A drag across the card pages ends with the pointer over some card; on
+  // web that release can register as a tap, and a tap here commits the
+  // choice and moves on — so picks are ignored while a swipe is underway.
+  const swipingRef = useRef(false);
 
   useEffect(() => {
     getTonePreference().then(setTone);
   }, []);
 
   useEffect(() => {
-    setSetIndex(0);
     getCustomWords().then((map) => setCustomWords(map[category.key] ?? []));
   }, [category.key, roundIndex]);
 
@@ -117,7 +128,7 @@ export default function CardSelectScreen({ navigation }: Props) {
 
   const handlePick = useCallback(
     async (word: WordItem) => {
-      if (busy) return;
+      if (busy || swipingRef.current) return;
       if (category.key === 'person' && word.nameable) {
         const last = await getLastName(word.id);
         setNameInput(last ?? '');
@@ -202,6 +213,17 @@ export default function CardSelectScreen({ navigation }: Props) {
 
   const selectedId = selections[category.key as CategoryKey]?.id;
 
+  const renderCard = (word: WordItem) => (
+    <WordCard
+      key={word.id}
+      word={word}
+      selected={word.id === selectedId}
+      disabled={busy}
+      onPress={handlePick}
+      onLongPress={handleLongPressWord}
+    />
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
@@ -220,30 +242,30 @@ export default function CardSelectScreen({ navigation }: Props) {
         <Text style={styles.question}>{category.question}</Text>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.grid}
-        showsVerticalScrollIndicator={false}
-      >
-        {visibleWords.map((word) => (
-          <WordCard
-            key={word.id}
-            word={word}
-            selected={word.id === selectedId}
-            disabled={busy}
-            onPress={handlePick}
-            onLongPress={handleLongPressWord}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.pagerBleed}>
+          <SwipePager
+            key={category.key}
+            pagePadding={SCREEN_PADDING}
+            onSwipingChange={(swiping) => {
+              swipingRef.current = swiping;
+            }}
+            pages={presetPages.map((words) => (
+              <View style={styles.grid}>
+                {words.map((word) => renderCard(word))}
+                {rowFillers(words.length)}
+              </View>
+            ))}
           />
-        ))}
+        </View>
 
-        {totalSets > 1 && (
-          <Pressable
-            style={({ pressed }) => [styles.moreBtn, pressed && styles.pressed]}
-            onPress={() => setSetIndex(isLastSet ? 0 : setIndex + 1)}
-          >
-            <Text style={styles.moreBtnText}>
-              {isLastSet ? '처음부터 다시 보기' : '다른 카드 보기'}
-            </Text>
-          </Pressable>
+        {/* Custom cards sit outside the pager, always in view, so a word
+            the user added never ends up on a page they have to find. */}
+        {customWords.length > 0 && (
+          <View style={styles.grid}>
+            {customWords.map((word) => renderCard(word))}
+            {rowFillers(customWords.length)}
+          </View>
         )}
 
         <Pressable
@@ -388,7 +410,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.bg,
-    paddingHorizontal: 24,
+    paddingHorizontal: SCREEN_PADDING,
   },
   topBar: {
     flexDirection: 'row',
@@ -423,12 +445,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.ink,
   },
+  scrollContent: {
+    paddingBottom: 28,
+  },
+  // Lets the pager run edge to edge so cards slide off the screen edge
+  // rather than being cut at the content padding; pages re-add the padding.
+  pagerBleed: {
+    marginHorizontal: -SCREEN_PADDING,
+  },
+  // paddingTop leaves room inside the pager's clipping bounds for the
+  // cards' bobbing animation and shadow.
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingTop: 16,
-    paddingBottom: 28,
+  },
+  filler: {
+    width: '22%',
+    aspectRatio: 1.1,
+    marginBottom: 22,
   },
   backdrop: {
     flex: 1,
