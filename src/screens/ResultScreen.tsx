@@ -437,7 +437,7 @@ export default function ResultScreen({ route, navigation }: Props) {
             style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
             onPress={() => setStickerSheetOpen(true)}
           >
-            <MaterialIcons name="local-offer" size={20} color={theme.inkSoft} />
+            <MaterialIcons name="emoji-emotions" size={20} color={theme.inkSoft} />
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
