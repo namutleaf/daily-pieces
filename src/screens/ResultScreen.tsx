@@ -32,8 +32,11 @@ import { checkLockSupport, authenticate } from '../utils/lock';
 import { showAlert } from '../utils/alert';
 import { saveCardImage, shareCardImage } from '../utils/cardImage';
 import { dateKeyFromTimestamp } from '../utils/stats';
+import { extractEmojis } from '../utils/emoji';
 import {
   getFontPreference,
+  getRecentEmojis,
+  pushRecentEmoji,
   removeEntry,
   updateBackgroundImage,
   updateLineOverrides,
@@ -71,6 +74,10 @@ const DEFAULT_STICKER_SPOTS = [
   { x: 0.5, y: 0.14 },
 ];
 
+// Shown when there are no recently used emoji yet (recent ones take the
+// front of the row once there are).
+const POPULAR_EMOJIS = ['😊', '🥰', '😂', '🥹', '😭', '😴', '🤔', '😎', '❤️', '✨', '🔥', '🎉', '👍', '🙏', '🌈', '🍀'];
+
 export default function ResultScreen({ route, navigation }: Props) {
   const { fromHistory } = route.params;
   const [entry, setEntry] = useState(route.params.entry);
@@ -84,6 +91,8 @@ export default function ResultScreen({ route, navigation }: Props) {
   const [hashtagDraft, setHashtagDraft] = useState('');
   const [bgPickerOpen, setBgPickerOpen] = useState(false);
   const [stickerSheetOpen, setStickerSheetOpen] = useState(false);
+  const [emojiDraft, setEmojiDraft] = useState('');
+  const [recentEmojis, setRecentEmojis] = useState<string[]>([]);
   const [fontFamily, setFontFamily] = useState<string | undefined>(undefined);
   // A single generic "undo" toast reused for sticker deletion, sentence
   // swaps, and hashtag edits — whichever fired last wins the slot, same as
@@ -101,6 +110,7 @@ export default function ResultScreen({ route, navigation }: Props) {
   useEffect(() => {
     getFontPreference().then((key) => setFontFamily(getFontOption(key).fontFamily));
     getUnlockedMilestones().then(setUnlockedMilestones);
+    getRecentEmojis().then(setRecentEmojis);
     return () => {
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     };
@@ -180,6 +190,41 @@ export default function ResultScreen({ route, navigation }: Props) {
     const updated = await updateStickers(entry.id, next);
     if (updated) setEntry(updated);
   };
+
+  // Any emoji from the phone's own keyboard (or the quick-pick row) becomes
+  // a sticker, rendered in the platform's native emoji style. Unlike the
+  // preset toggles, the same emoji can be placed more than once, and the
+  // sheet closes so the new sticker can be dragged into place straight away.
+  const handleAddEmoji = async (emoji: string) => {
+    const current = entry.stickers ?? [];
+    if (current.length >= MAX_STICKERS_PER_ENTRY) {
+      showAlert('스티커는 최대 4개까지', '카드 하나에 최대 4개까지 붙일 수 있어요.');
+      return;
+    }
+    const spot = DEFAULT_STICKER_SPOTS[current.length % DEFAULT_STICKER_SPOTS.length];
+    const placed: PlacedSticker = {
+      instanceId: `emoji-${Date.now()}`,
+      stickerId: `emoji:${emoji}`,
+      emoji,
+      x: spot.x,
+      y: spot.y,
+      scale: 1,
+      rotation: 0,
+    };
+    setStickerSheetOpen(false);
+    setEmojiDraft('');
+    const updated = await updateStickers(entry.id, [...current, placed]);
+    if (updated) setEntry(updated);
+    setRecentEmojis(await pushRecentEmoji(emoji));
+  };
+
+  const handleEmojiInput = (text: string) => {
+    const found = extractEmojis(text);
+    if (found.length > 0) handleAddEmoji(found[found.length - 1]);
+    else setEmojiDraft(text);
+  };
+
+  const quickEmojis = [...new Set([...recentEmojis, ...POPULAR_EMOJIS])].slice(0, POPULAR_EMOJIS.length);
 
   const handleStickerChange = async (
     instanceId: string,
@@ -793,6 +838,32 @@ export default function ResultScreen({ route, navigation }: Props) {
               카드 위 스티커는 끌어서 옮기고, 두 손가락으로 돌리거나 크기를 바꿀 수 있어요{'\n'}
               길게 누르면 삭제돼요
             </Text>
+            {/* Kept at the top of the sheet so the keyboard, when it opens
+                for the emoji field, doesn't cover the field itself. */}
+            <View style={styles.stickerPack}>
+              <View style={styles.stickerPackHeader}>
+                <Text style={styles.stickerPackTitle}>이모지</Text>
+              </View>
+              <TextInput
+                style={styles.emojiInput}
+                value={emojiDraft}
+                onChangeText={handleEmojiInput}
+                placeholder="키보드의 😊 버튼으로 아무 이모지나 붙여보세요"
+                placeholderTextColor={theme.inkSoft}
+              />
+              <View style={styles.emojiGrid}>
+                {quickEmojis.map((emoji) => (
+                  <Pressable
+                    key={emoji}
+                    style={({ pressed }) => [styles.emojiQuick, pressed && styles.sheetOptionPressed]}
+                    onPress={() => handleAddEmoji(emoji)}
+                    accessibilityLabel={`${emoji} 이모지 붙이기`}
+                  >
+                    <Text style={styles.emojiQuickText}>{emoji}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
             {STICKER_PACKS.map((pack) => (
               <View key={pack.id} style={styles.stickerPack}>
                 <View style={styles.stickerPackHeader}>
@@ -1204,6 +1275,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  emojiInput: {
+    borderWidth: 1.5,
+    borderColor: theme.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontSize: 15,
+    color: theme.ink,
+    marginBottom: 10,
+    outlineWidth: 0,
+  },
+  // Always 16 quick picks (recents topped up with popular ones), laid out
+  // as two even rows of 8.
+  emojiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 6,
+  },
+  emojiQuick: {
+    width: '11.5%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    backgroundColor: theme.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emojiQuickText: {
+    fontSize: 22,
   },
   stickerItem: {
     width: 68,

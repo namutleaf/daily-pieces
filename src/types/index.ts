@@ -102,6 +102,10 @@ export type PlacedSticker = {
   // than once and each copy dragged/resized independently.
   instanceId: string;
   stickerId: string;
+  // Set for a free-form emoji typed or picked from the system keyboard
+  // (stickerId is then `emoji:<emoji>`); preset stickers resolve their
+  // emoji from STICKER_PACKS instead.
+  emoji?: string;
   // Center point as a 0-1 fraction of the card's width/height, so the
   // placement holds up across different render sizes (card vs. share image).
   x: number;

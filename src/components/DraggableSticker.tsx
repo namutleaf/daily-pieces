@@ -38,7 +38,7 @@ export default function DraggableSticker({
   onDragUpdate,
   onDragEnd,
 }: Props) {
-  const sticker = findStickerById(placed.stickerId);
+  const emoji = placed.emoji ?? findStickerById(placed.stickerId)?.emoji;
   const [pressed, setPressed] = useState(false);
 
   // Instagram-style stickers: one finger held down keeps moving it, adding a
@@ -121,7 +121,7 @@ export default function DraggableSticker({
 
   const composed = Gesture.Simultaneous(pan, pinch, rotate, longPress);
 
-  if (!sticker || cardWidth === 0 || cardHeight === 0) return null;
+  if (!emoji || cardWidth === 0 || cardHeight === 0) return null;
 
   const size = BASE_SIZE * live.scale;
   const content = (
@@ -140,7 +140,7 @@ export default function DraggableSticker({
         },
       ]}
     >
-      {sticker.emoji}
+      {emoji}
     </Text>
   );
 

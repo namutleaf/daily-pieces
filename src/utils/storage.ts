@@ -8,6 +8,27 @@ const NAMES_KEY = 'daily_pieces_last_names_v1';
 const FONT_KEY = 'daily_pieces_font_pref_v1';
 const TONE_KEY = 'daily_pieces_tone_pref_v1';
 const CUSTOM_WORDS_KEY = 'daily_pieces_custom_words_v1';
+const RECENT_EMOJI_KEY = 'daily_pieces_recent_emoji_v1';
+const MAX_RECENT_EMOJI = 8;
+
+export async function getRecentEmojis(): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(RECENT_EMOJI_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function pushRecentEmoji(emoji: string): Promise<string[]> {
+  const next = [emoji, ...(await getRecentEmojis()).filter((e) => e !== emoji)].slice(0, MAX_RECENT_EMOJI);
+  try {
+    await AsyncStorage.setItem(RECENT_EMOJI_KEY, JSON.stringify(next));
+  } catch {
+    // best-effort only
+  }
+  return next;
+}
 
 export async function loadEntries(): Promise<DiaryEntry[]> {
   try {

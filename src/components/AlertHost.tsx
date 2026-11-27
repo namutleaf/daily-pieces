@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AlertButton, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { theme } from '../theme';
 import { AlertRequest, setAlertPresenter } from '../utils/alert';
 
+type QueuedAlert = AlertRequest & { id: number };
+
 export default function AlertHost() {
-  const [queue, setQueue] = useState<AlertRequest[]>([]);
+  const [queue, setQueue] = useState<QueuedAlert[]>([]);
+  const nextId = useRef(0);
 
   useEffect(() => {
-    setAlertPresenter((request) => setQueue((prev) => [...prev, request]));
+    setAlertPresenter((request) => setQueue((prev) => [...prev, { ...request, id: nextId.current++ }]));
     return () => setAlertPresenter(null);
   }, []);
 
@@ -18,8 +21,14 @@ export default function AlertHost() {
     button.onPress?.();
   };
 
+  // Mounted fresh per alert rather than kept mounted with `visible`:
+  // react-native-web appends a Modal's layer to the page when it mounts, so
+  // a long-lived one would sit beneath any sheet opened later and an alert
+  // raised from that sheet (e.g. the sticker limit) would be hidden.
+  if (!current) return null;
+
   return (
-    <Modal visible={!!current} transparent animationType="fade" onRequestClose={() => setQueue((p) => p.slice(1))}>
+    <Modal key={current.id} visible transparent animationType="fade" onRequestClose={() => setQueue((p) => p.slice(1))}>
       <View style={styles.backdrop}>
         {current && (
           <View style={styles.card}>
